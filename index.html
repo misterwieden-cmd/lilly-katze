@@ -288,9 +288,9 @@ function localBrain(t){
   return p[Math.floor(Math.random()*p.length)];
 }
 async function askBrain(text){
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),20000);
   try{
-    const r=await fetch('https://text.pollinations.ai/',{
+    const r=await fetch('https://text.pollinations.ai/openai',{
       method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
       body:JSON.stringify({messages:[
         {role:'system',content:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, maximal 2 kurze Sätze, miaue gelegentlich, sei witzig und herzlich.'},
@@ -298,7 +298,8 @@ async function askBrain(text){
       ], model:'openai'})
     });
     if(!r.ok) throw new Error('http '+r.status);
-    const t=(await r.text()).trim();
+    const data=await r.json();
+    const t=(data.choices?.[0]?.message?.content||'').trim();
     if(!t) throw new Error('leer');
     return t.slice(0,300);
   } finally { clearTimeout(to); }
@@ -311,8 +312,8 @@ function handleUser(text){
   chatBusy=true; addMsg('du',text);
   try{ rec.stop(); }catch(e){}
   setState('think'); statusEl.textContent='DENKT...';
-  const answer = askBrain(text).catch(()=>localBrain(text));
-  answer.then(ans=>{
+  const answer = askBrain(text).then(ans=>({ok:true,ans})).catch(err=>({ok:false,ans:localBrain(text)}));
+  answer.then(({ans})=>{
     addMsg('lilly',ans);
     statusEl.textContent='ANTWORTET';
     speak(ans, ()=>{ chatBusy=false; if(chatMode) startListening(); });
@@ -321,10 +322,17 @@ function handleUser(text){
 function startChat(){
   if(!SR){ statusEl.textContent='SPRACHERKENNUNG NUR IN CHROME'; setTimeout(()=>statusEl.textContent='IDLE',3000); return; }
   chatMode=true; chatBusy=false; syncChatUI();
-  if(!micMode) toggleMic();
-  rec = new SR(); rec.lang='de-DE'; rec.interimResults=false; rec.maxAlternatives=1;
+  if(micMode) stopMic();              // Mikrofon freiräumen für die Erkennung
+  rec = new SR(); rec.lang='de-DE'; rec.interimResults=true; rec.maxAlternatives=1;
   rec.onstart=()=>{ if(!chatBusy){ setState('talk'); statusEl.textContent='HÖRT ZU'; } };
-  rec.onresult=(e)=>{ const t=e.results[e.results.length-1][0].transcript.trim(); if(t) handleUser(t); };
+  rec.onresult=(e)=>{
+    const last=e.results[e.results.length-1];
+    if(!chatBusy){
+      mouthOpen=Math.min(1,(last[0].transcript.length%5)/3+0.2); // Mund wackelt live beim Zuhören
+      const fin = last.isFinal ? last[0].transcript.trim() : '';
+      if(fin) handleUser(fin);
+    }
+  };
   rec.onerror=(e)=>{ if(e.error==='not-allowed'){ statusEl.textContent='MIK VERWEIGERT'; setTimeout(()=>statusEl.textContent='IDLE',2500); } };
   rec.onend=()=>{ if(chatMode && !chatBusy) startListening(); };
   startListening();
@@ -672,9 +680,12 @@ function frame(now){
   /* mouth engine */
   const speaking = talking || (fallbackUntil>t);
   if(micMode && analyser) micTick(t,dt);
-  if((micMode||chatMode) && !speaking) micTick(t,dt);
   if(state==='talk'){
-    if((micMode||chatMode) && !speaking && !chatBusy){
+    if(chatMode && !speaking && !chatBusy){
+      // Chat-Zuhören: Mund folgt Erkennungsaktivität (mouthOpen von onresult)
+      mouthOpen=lerp(mouthOpen,mouthOpen*0.85,dt*8);
+      amp=lerp(amp,0.3,dt*6);
+    } else if(micMode){
       mouthOpen=lerp(mouthOpen, micLevel, dt*25);
       mouthWide=lerp(mouthWide,0.55,dt*6);
       amp=lerp(amp,micLevel,dt*10);

@@ -193,6 +193,8 @@ function speak(text, onDone){
     utter.onend = ()=>{ talking=false; setState('idle'); if(onDone) onDone(); };
     utter.onerror= ()=>{ talking=false; setState('idle'); if(onDone) onDone(); };
     synth.speak(utter);
+    // Echo-Schutz: während Lilly spricht nichts verstehen wollen (On-Device-Erkennung hört sonst sich selbst)
+    if(rec && recActive){ try{ rec.onend=null; rec.stop(); recActive=false; }catch(e){} }
   } else {
     fallbackUntil = performance.now()/1000 + durMs/1000;
     setTimeout(()=>{ talking=false; setState('idle'); if(onDone) onDone(); }, durMs);
@@ -266,7 +268,8 @@ $fab.onclick=toggleMic;
 
 /* ================= Chat-Modus (rede MIT ihr) ================= */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let chatMode=false, rec=null, chatBusy=false;
+let chatMode=false, rec=null, chatBusy=false, recActive=false;
+let chatHistory=[];
 const $fab2=document.getElementById('fab2');
 const $chatlog=document.getElementById('chatlog');
 function addMsg(who,text){
@@ -294,7 +297,7 @@ async function askBrain(text){
       method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
       body:JSON.stringify({messages:[
         {role:'system',content:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, maximal 2 kurze Sätze, miaue gelegentlich, sei witzig und herzlich.'},
-        {role:'user',content:text}
+        ...chatHistory.slice(-8)
       ], model:'openai'})
     });
     if(!r.ok) throw new Error('http '+r.status);
@@ -308,15 +311,21 @@ function startListening(){
   if(!chatMode||!rec) return;
   try{ rec.start(); }catch(e){}
 }
+function startListening(){
+  if(!chatMode||!rec||chatBusy||recActive) return;
+  try{ rec.start(); }catch(e){}
+}
 function handleUser(text){
   chatBusy=true; addMsg('du',text);
+  chatHistory.push({role:'user',content:text});
   try{ rec.stop(); }catch(e){}
   setState('think'); statusEl.textContent='DENKT...';
-  const answer = askBrain(text).then(ans=>({ok:true,ans})).catch(err=>({ok:false,ans:localBrain(text)}));
+  const answer = askBrain(text).then(ans=>({ans})).catch(err=>({ans:localBrain(text)}));
   answer.then(({ans})=>{
+    chatHistory.push({role:'assistant',content:ans});
     addMsg('lilly',ans);
     statusEl.textContent='ANTWORTET';
-    speak(ans, ()=>{ chatBusy=false; if(chatMode) startListening(); });
+    speak(ans, ()=>{ chatBusy=false; if(chatMode) setTimeout(startListening, 900); });
   });
 }
 function startChat(){
@@ -324,7 +333,7 @@ function startChat(){
   chatMode=true; chatBusy=false; syncChatUI();
   if(micMode) stopMic();              // Mikrofon freiräumen für die Erkennung
   rec = new SR(); rec.lang='de-DE'; rec.interimResults=true; rec.maxAlternatives=1;
-  rec.onstart=()=>{ if(!chatBusy){ setState('talk'); statusEl.textContent='HÖRT ZU'; } };
+  rec.onstart=()=>{ recActive=true; if(!chatBusy){ setState('talk'); statusEl.textContent='HÖRT ZU'; } };
   rec.onresult=(e)=>{
     const last=e.results[e.results.length-1];
     if(!chatBusy){
@@ -333,13 +342,17 @@ function startChat(){
       if(fin) handleUser(fin);
     }
   };
-  rec.onerror=(e)=>{ if(e.error==='not-allowed'){ statusEl.textContent='MIK VERWEIGERT'; setTimeout(()=>statusEl.textContent='IDLE',2500); } };
-  rec.onend=()=>{ if(chatMode && !chatBusy) startListening(); };
+  rec.onerror=(e)=>{
+    if(e.error==='not-allowed'){ statusEl.textContent='MIK VERWEIGERT'; setTimeout(()=>statusEl.textContent='IDLE',2500); }
+    else if(e.error==='network'){ statusEl.textContent='NETZ-PROBLEM, WEITER...'; setTimeout(()=>statusEl.textContent='HÖRT ZU',2000); }
+  };
+  rec.onend=()=>{ recActive=false; if(chatMode && !chatBusy) setTimeout(startListening, 600); };
   startListening();
   addMsg('lilly','Miau! Chat-Modus an. Rede einfach los!');
 }
 function stopChat(){
-  chatMode=false; chatBusy=false; syncChatUI();
+  chatMode=false; chatBusy=false; recActive=false; syncChatUI();
+  chatHistory=[];
   if(rec){ try{ rec.onend=null; rec.stop(); }catch(e){} rec=null; }
   if(synth) synth.cancel(); talking=false;
   if(micMode) stopMic();

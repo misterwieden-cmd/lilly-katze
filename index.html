@@ -65,6 +65,10 @@
   .knopf{min-width:56px; min-height:56px; border-radius:16px; border:1px solid var(--linie); background:#160f2a; color:var(--text); font-size:12px; font-weight:600; letter-spacing:.05em;}
   .knopf.on{border-color:var(--gruen); color:var(--gruen);}
   #modus.aus{color:var(--dim);}
+  #tippzeile{display:flex; gap:10px; padding:10px 16px 0;}
+  #tippfeld{flex:1; min-height:50px; border-radius:14px; border:1px solid var(--linie); background:#120d22; color:var(--text); padding:0 14px; font-size:16px; font-family:inherit;}
+  #tippfeld::placeholder{color:#7d6ea6;}
+  #senden{min-width:96px;}
   @media (max-height:620px){ #verlauf{max-height:20vh;} #buehne{width:min(70vw,240px);} }
   @media (prefers-reduced-motion:reduce){ .puls{animation:none;} *{transition:none !important;} }
 </style>
@@ -94,6 +98,11 @@
 </div>
 
 <div id="verlauf" aria-live="polite"></div>
+
+<div id="tippzeile">
+  <input id="tippfeld" type="text" placeholder="Tippen statt sprechen ..." enterkeyhint="send" autocomplete="off">
+  <button class="knopf" id="senden">SENDEN</button>
+</div>
 
 <div id="steuer">
   <button class="knopf" id="modus" title="Modus umschalten">FAST</button>
@@ -313,7 +322,7 @@
         S.ws.send(JSON.stringify({ type:'start', format:'pcm16', rate:16000 }));
       }
       var r = S.erkennt || spracherkennungBauen();
-      if(r){ try{ r.start(); }catch(e){} } else { statusText('KEIN SPRACH-API'); }
+      if(r){ try{ r.start(); }catch(e){} } else { statusText('KEIN SPRACH-API - BITTE TIPPEN','fehler'); if(elTipp){ elTipp.focus(); } }
     }).catch(function(e){
       elPtt.classList.remove('aktiv');
       statusText('MIKRO: ' + (e.message || 'Fehler'), 'fehler');
@@ -391,6 +400,11 @@
     }
     requestAnimationFrame(zeichnen);
   }
+
+  var elTipp = $('tippfeld'), elSenden = $('senden');
+  function sendeTipp(){ var t = elTipp.value.trim(); if(!t) return; elTipp.value=''; frage(t); }
+  elSenden.addEventListener('click', sendeTipp);
+  elTipp.addEventListener('keydown', function(ev){ if(ev.key === 'Enter'){ ev.preventDefault(); sendeTipp(); } });
 
   elPtt.addEventListener('pointerdown', function(ev){ ev.preventDefault(); sprichStart(); });
   ['pointerup','pointercancel','pointerleave'].forEach(function(a){

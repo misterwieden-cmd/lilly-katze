@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#05070d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lilly">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -592,6 +600,29 @@ if(localStorage.getItem('lilly_relay') && localStorage.getItem('lilly_relay_tok'
       statusEl.textContent='ZENTRALE VERBUNDEN';
       setTimeout(()=>{ statusEl.textContent='IDLE'; },3200);
       history.replaceState(null,'',location.pathname+location.search);
+    }
+  }catch(e){}
+})();
+
+/* ---------- Aktuelle Brücken-Adresse automatisch holen (relay.txt) ---------- */
+(async function(){
+  try{
+    const kurz=localStorage.getItem('lilly_relay')||'';
+    let lebt=false;
+    if(kurz){
+      try{ const r=await fetch(kurz.replace(/\/+$/,'')+'/ping',{cache:'no-store'}); const j=await r.json(); lebt=(j && j.ok===true); }catch(e){ lebt=false; }
+    }
+    if(lebt) return;
+    const r2=await fetch('relay.txt',{cache:'no-store'});
+    if(!r2.ok) return;
+    const neu=(await r2.text()).trim();
+    if(!/^https?:\/\/\S+$/.test(neu)) return;
+    if(neu===kurz) return;
+    localStorage.setItem('lilly_relay', neu);
+    if(localStorage.getItem('lilly_relay_tok')){
+      $fab4.classList.add('on');
+      statusEl.textContent='ZENTRALE AKTUALISIERT';
+      setTimeout(()=>{ statusEl.textContent='IDLE'; },3200);
     }
   }catch(e){}
 })();

@@ -1,1130 +1,428 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#08060f">
+<title>Lilly Kommandozentrale</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#05070d">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Lilly">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icon-192.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>LILLY // VOICE CORE</title>
+<link rel="icon" href="icon-192.png">
 <style>
   :root{
-    --cyan:#22d3ee; --pink:#ff2e88; --violet:#a78bfa;
-    --bg:#05070d; --panel:rgba(10,16,30,.72);
+    --bg:#08060f; --bg2:#120d22; --linie:#2a1f45; --text:#f2ecff; --dim:#9d8fc4;
+    --pink:#ff5fa2; --cyan:#43e8ff; --lila:#8b5cf6; --gruen:#3ddc97; --rot:#ff5470;
+    --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:#dbeafe;
-    font-family:"Segoe UI",system-ui,sans-serif;overflow:hidden}
-  #stage{position:fixed;inset:0}
-  canvas{display:block;width:100%;height:100%}
-  #brand{position:absolute;top:14px;left:18px;font-size:12px;letter-spacing:4px;
-    color:#64748b;user-select:none}
-  #pill{position:absolute;top:12px;left:50%;transform:translateX(-50%);
-    display:flex;align-items:center;gap:8px;padding:7px 16px;border-radius:999px;
-    background:var(--panel);border:1px solid rgba(148,163,184,.18);backdrop-filter:blur(8px);
-    font-size:13px;letter-spacing:2px}
-  #dot{width:9px;height:9px;border-radius:50%;background:var(--cyan);
-    box-shadow:0 0 10px var(--cyan);transition:background .25s, box-shadow .25s}
-  #bar{position:fixed;left:0;right:0;bottom:0;min-height:92px;max-height:42vh;display:flex;gap:10px;
-    align-items:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));flex-wrap:wrap;
-    overflow-y:auto;
-    background:var(--panel);border-top:1px solid rgba(148,163,184,.15);backdrop-filter:blur(10px)}
-  #fab{position:fixed;right:14px;top:128px;z-index:30;
-    width:58px;height:58px;border-radius:50%;border:2px solid rgba(34,211,238,.7);
-    background:rgba(10,16,30,.85);font-size:25px;line-height:1;cursor:pointer;
-    box-shadow:0 4px 24px rgba(0,0,0,.5), 0 0 14px rgba(34,211,238,.35);
-    transition:transform .12s, box-shadow .2s, border-color .2s}
-  #fab:active{transform:scale(.92)}
-  #fab.on{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,.6);background:rgba(20,40,25,.9)}
-  #fab2{position:fixed;right:14px;top:58px;z-index:30;
-    width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,46,136,.7);
-    background:rgba(10,16,30,.85);font-size:25px;line-height:1;cursor:pointer;
-    box-shadow:0 4px 24px rgba(0,0,0,.5), 0 0 14px rgba(255,46,136,.35);
-    transition:transform .12s, box-shadow .2s, border-color .2s}
-  #fab2:active{transform:scale(.92)}
-  #fab2.on{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,.6);background:rgba(20,40,25,.9)}
-  #fab3,#fab4{position:fixed;right:14px;z-index:30;width:58px;height:58px;border-radius:50%;
-    border:2px solid rgba(148,163,184,.6);background:rgba(10,16,30,.85);font-size:24px;
-    line-height:1;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.5);transition:transform .12s, border-color .2s}
-  #fab3{top:198px}
-  #fab4{top:268px}
-  #fab3:active,#fab4:active{transform:scale(.92)}
-  #fab3.on,#fab4.on{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,.6);background:rgba(20,40,25,.9)}
-  #chatlog{position:fixed;top:196px;left:12px;right:88px;z-index:25;pointer-events:none;
-    display:flex;flex-direction:column;gap:6px;font-size:13px}
-  #chatlog div{padding:7px 11px;border-radius:12px;max-width:85%;line-height:1.35;
-    background:rgba(10,16,30,.78);border:1px solid rgba(148,163,184,.25);backdrop-filter:blur(6px)}
-  #chatlog .du{align-self:flex-end;border-color:rgba(34,211,238,.45);color:#cffafe}
-  #chatlog .lilly{align-self:flex-start;border-color:rgba(255,46,136,.45);color:#ffd6e8}
-  @media (max-width:480px){ .rate{display:none} select{max-width:150px} }
-  #text{flex:1 1 260px;min-width:200px;padding:11px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.25);
-    background:rgba(2,6,16,.8);color:#e2e8f0;font-size:14px;outline:none}
-  #text:focus{border-color:rgba(34,211,238,.6);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
-  button{padding:11px 16px;border-radius:12px;border:1px solid rgba(148,163,184,.25);
-    background:rgba(15,23,42,.9);color:#e2e8f0;font-size:14px;cursor:pointer;transition:.15s}
-  button:hover{border-color:rgba(34,211,238,.7);transform:translateY(-1px)}
-  #btnSpeak{border-color:rgba(255,46,136,.55);color:#ffd6e8;background:rgba(255,46,136,.12)}
-  #btnSpeak:hover{border-color:var(--pink);box-shadow:0 0 18px rgba(255,46,136,.25)}
-  select{padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.25);
-    background:rgba(2,6,16,.8);color:#e2e8f0;font-size:13px;max-width:210px}
-  .rate{display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8}
-  input[type=range]{width:90px;accent-color:var(--cyan)}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:radial-gradient(120% 80% at 50% 0%,#1b1233 0%,var(--bg) 60%);
+    color:var(--text); font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden; touch-action:manipulation;
+    padding-top:var(--safe-t); padding-bottom:var(--safe-b);
+  }
+  header{display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--linie);}
+  header h1{font-size:15px; margin:0; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); font-weight:600;}
+  #status{margin-left:auto; font-size:12px; letter-spacing:.1em; color:var(--cyan); font-variant-numeric:tabular-nums;}
+  #status.fehler{color:var(--rot);} #status.ok{color:var(--gruen);}
+  .stufe{display:flex; flex:1; min-height:0; align-items:center; justify-content:center; position:relative;}
+  #buehne{position:relative; width:min(88vw,340px); aspect-ratio:1/1;}
+  #strahlen{position:absolute; inset:0; width:100%; height:100%;}
+  #kopf{position:absolute; inset:12%; width:76%; height:76%; overflow:visible;}
+  #kopf .fell{fill:#2b2140; stroke:#4b3a72; stroke-width:1.5;}
+  #kopf .ohr{fill:#3a2c57; stroke:#5b4788; stroke-width:1.5; transform-origin:center; transition:transform .18s ease;}
+  #kopf .ohrin{fill:#ff8fc0; opacity:.55;}
+  #kopf .auge{fill:#0d0a17; stroke:#5b4788; stroke-width:1.2;}
+  #kopf .pupille{fill:var(--cyan); transition:fill .25s ease;}
+  #kopf .nase{fill:var(--pink);}
+  #kopf .mund{fill:none; stroke:#6b5696; stroke-width:2.2; stroke-linecap:round;}
+  #kopf .bart{stroke:#6b5696; stroke-width:1.4; stroke-linecap:round; opacity:.8;}
+  #kopf.blinzeln .augenlid{opacity:1;}
+  #kopf .augenlid{fill:#2b2140; opacity:0; transition:opacity .1s;}
+  #kopf.lauschen .ohr{transform:scale(1.06);}
+  #kopf.lauschen .pupille{fill:var(--pink);}
+  #kopf.denkt .pupille{fill:var(--lila);}
+  #kopf.spricht .mund{stroke:var(--pink);}
+  #kopf.fehler .pupille{fill:var(--rot);}
+  .puls{animation:puls 1.1s ease-in-out infinite;}
+  @keyframes puls{0%,100%{opacity:.55;}50%{opacity:1;}}
+  #verlauf{flex:0 0 auto; max-height:26vh; overflow-y:auto; padding:6px 14px 10px; display:flex; flex-direction:column; gap:8px; scrollbar-width:thin;}
+  .blase{max-width:88%; padding:9px 12px; border-radius:14px; font-size:14.5px; white-space:pre-wrap; word-break:break-word; animation:auf .18s ease;}
+  @keyframes auf{from{opacity:0; transform:translateY(4px);}to{opacity:1;}}
+  .blase.ich{align-self:flex-end; background:linear-gradient(135deg,#3a2a63,#4a2f6e); border:1px solid var(--linie);}
+  .blase.lilly{align-self:flex-start; background:#160f2a; border:1px solid var(--linie); color:#ffe9f5;}
+  .blase.meta{align-self:center; font-size:11.5px; color:var(--dim); letter-spacing:.06em; background:none; border:none;}
+  #steuer{display:flex; align-items:center; gap:12px; padding:12px 16px calc(14px + var(--safe-b)); border-top:1px solid var(--linie); background:#0b0817;}
+  #ptt{
+    flex:1; min-height:60px; border-radius:18px; border:1px solid #6a4bb0; cursor:pointer;
+    background:linear-gradient(135deg,#5b2fa8,#a13a86); color:#fff; font-size:17px; font-weight:700; letter-spacing:.06em;
+    display:flex; align-items:center; justify-content:center; gap:10px; touch-action:none; user-select:none;
+    box-shadow:0 8px 26px -10px #a13a86;
+  }
+  #ptt:active,#ptt.aktiv{background:linear-gradient(135deg,#c23a7f,#ff5fa2); transform:translateY(1px);}
+  #ptt[disabled]{opacity:.45; box-shadow:none;}
+  .knopf{min-width:56px; min-height:56px; border-radius:16px; border:1px solid var(--linie); background:#160f2a; color:var(--text); font-size:12px; font-weight:600; letter-spacing:.05em;}
+  .knopf.on{border-color:var(--gruen); color:var(--gruen);}
+  #modus.aus{color:var(--dim);}
+  @media (max-height:620px){ #verlauf{max-height:20vh;} #buehne{width:min(70vw,240px);} }
+  @media (prefers-reduced-motion:reduce){ .puls{animation:none;} *{transition:none !important;} }
 </style>
 </head>
 <body>
-<div id="stage">
-  <canvas id="c"></canvas>
-  <div id="brand">LILLY // VOICE CORE v2</div>
-  <div id="pill"><span id="dot"></span><span id="status">IDLE</span></div>
-  <button id="fab" title="Mikrofon-Spiegel">🎙</button>
-  <button id="fab2" title="Chat-Modus: rede mit Lilly">💬</button>
-  <button id="fab3" title="KI-Schlüssel (Gemini) - optional">🔑</button>
-  <button id="fab4" title="Kommandozentrale verbinden">🎛️</button>
-  <div id="chatlog"></div>
+<header>
+  <h1>Lilly</h1>
+  <div id="status">BEREIT</div>
+</header>
+
+<div class="stufe">
+  <div id="buehne">
+    <canvas id="strahlen" width="600" height="600" aria-hidden="true"></canvas>
+    <svg id="kopf" viewBox="0 0 200 200" role="img" aria-label="Katzenkopf">
+      <path class="ohr" d="M56 74 L40 26 L86 52 Z"/><path class="ohr" d="M144 74 L160 26 L114 52 Z"/>
+      <path class="ohrin" d="M60 68 L49 38 L80 54 Z"/><path class="ohrin" d="M140 68 L151 38 L120 54 Z"/>
+      <ellipse class="fell" cx="100" cy="108" rx="62" ry="56"/>
+      <circle class="auge" cx="78" cy="100" r="15"/><circle class="auge" cx="122" cy="100" r="15"/>
+      <circle class="pupille" cx="78" cy="100" r="6.5"/><circle class="pupille" cx="122" cy="100" r="6.5"/>
+      <rect class="augenlid" x="62" y="88" width="32" height="24" rx="10"/>
+      <rect class="augenlid" x="106" y="88" width="32" height="24" rx="10"/>
+      <path class="nase" d="M100 116 l7 6 l-7 6 l-7 -6 Z"/>
+      <path class="mund" id="mund" d="M100 128 q-10 10 -20 2 M100 128 q10 10 20 2"/>
+      <path class="bart" d="M74 122 L44 116 M74 130 L44 132 M126 122 L156 116 M126 130 L156 132"/>
+    </svg>
+  </div>
 </div>
-<div id="bar">
-  <input id="text" placeholder="Text zum Sprechen… (oder Mikro-Button nutzen)" value="" />
-  <select id="voice"></select>
-  <button id="btnSpeak">🗣 Sprechen</button>
-  <button id="btnMic">🎙 Mein Audio</button>
-  <button id="btnThink">💭 Denken</button>
-  <button id="btnIdle">😴 Idle</button>
-  <span class="rate">Tempo <input type="range" id="rate" min="0.7" max="1.6" step="0.05" value="1.15"></span>
+
+<div id="verlauf" aria-live="polite"></div>
+
+<div id="steuer">
+  <button class="knopf" id="modus" title="Modus umschalten">FAST</button>
+  <button id="ptt" disabled>HALTEN &amp; SPRECHEN</button>
+  <button class="knopf" id="zahnrad" title="Einstellungen">SETUP</button>
 </div>
 
 <script>
-"use strict";
-/* ================= Core Setup ================= */
-const cv = document.getElementById('c');
-const ctx = cv.getContext('2d');
-let W=0, H=0, DPR=1;
-function resize(){
-  DPR = Math.min(2, window.devicePixelRatio||1);
-  W = cv.clientWidth; H = cv.clientHeight;
-  cv.width = W*DPR; cv.height = H*DPR;
-}
-window.addEventListener('resize', resize); resize();
+(function(){
+  'use strict';
+  var LS = { url:'lilly_relay', tok:'lilly_relay_tok', key:'lilly_gkey' };
+  var $ = function(id){ return document.getElementById(id); };
+  var elStatus = $('status'), elVerlauf = $('verlauf'), elKopf = $('kopf'), elPtt = $('ptt');
+  var elModus = $('modus'), elZahnrad = $('zahnrad'), elCanvas = $('strahlen');
+  var ctx = elCanvas.getContext('2d');
+  var S = {
+    ws:null, wsOk:false, wartend:false, modus:'fast', verlauf:[],
+    pegel:0, ziel:0, serverPegel:0, serverPegelZeit:0, zustand:'idle',
+    audio:null, analyser:null, mic:null, worklet:null, rec:null, erkennt:null,
+    laeuft:true, blinzelTimer:0
+  };
 
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const lerp=(a,b,t)=>a+(b-a)*t;
-function hexRgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
-function mixCol(c1,c2,t){const a=hexRgb(c1),b=hexRgb(c2);
-  return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;}
-
-/* States: idle | talk | think  */
-let state='idle';
-const COL = {idle:'#22d3ee', talk:'#ff2e88', think:'#a78bfa'};
-let stateMix = {r:34,g:211,b:238}; // current mixed state color
-function setState(s){
-  if(state===s) return;
-  state=s;
-  glitchT = 0.25;
-  pill.style.color = COL[s]; dot.style.background = COL[s]; dot.style.boxShadow = `0 0 12px ${COL[s]}`;
-  statusEl.textContent = s==='talk'?'SPRICHT':(s==='think'?'DENKT':'IDLE');
-}
-
-const pill=document.getElementById('pill'), statusEl=document.getElementById('status'), dot=document.getElementById('dot');
-
-/* ================= Animation State ================= */
-let mouthOpen=0, mouthWide=0.5, amp=0;          // smoothed values
-let visemeOpen=0.45, visemeWide=0.55, visemeUntil=0;
-let blinkAt = 1.6, blinkPhase = -1;             // blink scheduling (seconds clock)
-let lookX=0, lookY=0, lookTX=0, lookTY=0, lookAt=2;
-let earTwitchAt=3, earTwitchSide=-1, earTwitchPhase=-1;
-let glitchT=0;
-let bobY=0, headRot=0;
-let sparks=[], rings=[], dust=[];
-for(let i=0;i<16;i++) dust.push({x:Math.random(),y:Math.random(),s:0.4+Math.random()*1.2,v:0.01+Math.random()*0.02,ph:Math.random()*7});
-let ringSpawn=0, sparkPrev=0;
-
-/* pseudo-noise */
-function n1(t){return Math.sin(t*1.7)*0.5+Math.sin(t*3.1+1.3)*0.3+Math.sin(t*5.7+2.1)*0.2;}
-
-/* ================= TTS / Lip Sync ================= */
-const synth = window.speechSynthesis;
-let voices=[], utter=null, talking=false, fallbackUntil=0, gotBoundary=false;
-const $voice=document.getElementById('voice'), $text=document.getElementById('text'), $rate=document.getElementById('rate');
-
-function loadVoices(){
-  if(!synth) return;
-  voices = synth.getVoices();
-  const de = voices.filter(v=>/^de/i.test(v.lang));
-  const pick = de.length?de:voices;
-  const sorted = [...pick].sort((a,b)=>{
-    const w=s=>/Hedda|Katja|Anna|Petra|Klara|Marlene|Google Deutsch|female|Weiblich/i.test(s.name)?0:1;
-    return w(a)-w(b);
-  });
-  $voice.innerHTML = sorted.map(v=>`<option value="${v.name}">${v.name} (${v.lang})</option>`).join('') || '<option>keine Stimme</option>';
-}
-if(synth){ loadVoices(); synth.addEventListener?.('voiceschanged', loadVoices); }
-
-function wordViseme(w){
-  const s=w.toLowerCase();
-  if(/^[mpb]/.test(s)) return {o:0.05,w:0.5};
-  if(s.includes('sch')||s.includes('ch')) return {o:0.5,w:0.35};
-  for(const ch of s){
-    const m={a:{o:1,w:.45},ä:{o:.85,w:.5},e:{o:.6,w:.8},i:{o:.45,w:.9},o:{o:.9,w:.25},
-      u:{o:.65,w:.2},ü:{o:.5,w:.4},ö:{o:.6,w:.45},y:{o:.5,w:.6}}[ch];
-    if(m) return m;
+  function statusText(t, klasse){ elStatus.textContent = t; elStatus.className = klasse || ''; }
+  function setZustand(z){
+    S.zustand = z;
+    elKopf.className.baseVal = z === 'listening' ? 'lauschen'
+      : z === 'thinking' ? 'denkt puls' : z === 'speaking' ? 'spricht'
+      : z === 'error' ? 'fehler' : '';
   }
-  return {o:0.42,w:0.55};
-}
+  function blase(wer, text){
+    var d = document.createElement('div');
+    d.className = 'blase ' + wer; d.textContent = text;
+    elVerlauf.appendChild(d); elVerlauf.scrollTop = elVerlauf.scrollHeight;
+    return d;
+  }
+  function meta(text){ blase('meta', text); }
+  function basis(){
+    var u = (localStorage.getItem(LS.url) || '').trim().replace(/\/+$/,'');
+    var t = (localStorage.getItem(LS.tok) || '').trim();
+    return { url:u, tok:t, fertig: !!(u && t) };
+  }
+  function wsUrl(u){ return u.replace(/^http/i,'ws').replace(/\/+$/,'') + '/ws?token=' + encodeURIComponent(basis().tok); }
 
-function speak(text, onDone){
-  text=(text||'').trim(); if(!text) return;
-  if(synth) synth.cancel();
-  setState('talk'); talking=true; gotBoundary=false;
-  visemeUntil=0; mouthOpen=0.05;
-  const durMs = text.length*58/parseFloat($rate.value) + 400;
+  function zeigeBereit(){
+    elPtt.disabled = !basis().fertig;
+    if(!basis().fertig){ statusText('SETUP NÖTIG','fehler'); }
+    else if(!S.wsOk){ statusText('VERBINDE…'); }
+  }
 
-  if(synth){
-    utter = new SpeechSynthesisUtterance(text);
-    const v = voices.find(x=>x.name===$voice.value);
-    if(v){ utter.voice=v; utter.lang=v.lang; } else utter.lang='de-DE';
-    utter.rate = parseFloat($rate.value); utter.pitch=1.08; utter.volume=1;
-    utter.onboundary = e=>{
-      gotBoundary=true;
-      if(e.charIndex!=null){
-        // Wort am charIndex bestimmen
-        let i=0;
-        for(const w of text.split(/\s+/)){
-          i = text.indexOf(w, i); if(i<0) continue;
-          if(e.charIndex>=i && e.charIndex<i+w.length){
-            const vm=wordViseme(w);
-            visemeOpen=vm.o; visemeWide=vm.w;
-            visemeUntil=performance.now()/1000 + clamp(w.length*70/parseFloat($rate.value),110,520)/1000;
-            break;
-          }
-          i+=w.length;
-        }
+  function holeTunnelAdresse(){
+    fetch('relay.txt', { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(neu){
+      neu = (neu || '').trim();
+      if(!/^https?:\/\//.test(neu)) return;
+      if(neu !== localStorage.getItem(LS.url)){
+        localStorage.setItem(LS.url, neu);
+        meta('Tunnel-Adresse aktualisiert');
+        if(basis().fertig) verbinde();
       }
+    }).catch(function(){});
+  }
+
+  function verbinde(){
+    if(S.ws){ try{ S.ws.close(); }catch(e){} S.ws = null; }
+    S.wsOk = false;
+    var b = basis();
+    if(!b.fertig){ zeigeBereit(); return; }
+    var ws;
+    try{ ws = new WebSocket(wsUrl(b.url)); }catch(e){ S.wsOk = false; zeigeBereit(); return; }
+    S.ws = ws;
+    var auf = setTimeout(function(){ if(ws.readyState !== 1){ try{ ws.close(); }catch(e){} } }, 6000);
+    ws.onopen = function(){ clearTimeout(auf); S.wsOk = true; statusText('VERBUNDEN','ok'); zeigeBereit(); };
+    ws.onclose = function(){ clearTimeout(auf); if(S.ws === ws){ S.wsOk = false; S.ws = null; zeigeBereit(); } };
+    ws.onerror = function(){ S.wsOk = false; };
+    ws.onmessage = function(ev){
+      if(typeof ev.data !== 'string') return;
+      var m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
+      if(m.type === 'ready'){ statusText('VERBUNDEN','ok'); }
+      else if(m.type === 'state'){ setZustand(m.value); if(m.value === 'thinking') statusText('DENKT…'); else if(m.value === 'listening') statusText('HÖRT ZU'); }
+      else if(m.type === 'level'){ S.serverPegel = Math.max(m.rms || 0, (m.peak || 0) * 0.5); S.serverPegelZeit = performance.now(); }
+      else if(m.type === 'answer'){ S.wartend = false; blase('lilly', m.reply); merken('assistant', m.reply); statusText('BEREIT','ok'); setTimeout(function(){ setZustand('idle'); }, 900); }
+      else if(m.type === 'transcript_final'){ if(m.text){ blase('ich', m.text); merken('user', m.text); } }
+      else if(m.type === 'pong'){}
+      else if(m.type === 'error'){ statusText('FEHLER: ' + (m.message||''), 'fehler'); blase('meta', 'Fehler: ' + (m.message||'')); }
     };
-    utter.onend = ()=>{ talking=false; setState('idle'); if(onDone) onDone(); };
-    utter.onerror= ()=>{ talking=false; setState('idle'); if(onDone) onDone(); };
-    synth.speak(utter);
-    // Echo-Schutz: während Lilly spricht nichts verstehen wollen (On-Device-Erkennung hört sonst sich selbst)
-    if(rec && recActive){ try{ rec.onend=null; rec.stop(); recActive=false; }catch(e){} }
-  } else {
-    fallbackUntil = performance.now()/1000 + durMs/1000;
-    setTimeout(()=>{ talking=false; setState('idle'); if(onDone) onDone(); }, durMs);
   }
-}
 
-document.getElementById('btnSpeak').onclick=()=>speak($text.value);
-document.getElementById('btnIdle').onclick=()=>{ if(synth) synth.cancel(); talking=false; setState('idle'); };
-let thinkTimer=null;
-document.getElementById('btnThink').onclick=()=>{
-  if(synth) synth.cancel(); talking=false;
-  setState('think');
-  clearTimeout(thinkTimer);
-  thinkTimer=setTimeout(()=>speak($text.value), 2600);
-};
-$text.addEventListener('keydown',e=>{ if(e.key==='Enter') speak($text.value); });
-cv.addEventListener('click',()=>{
-  if(state!=='idle') return;
-  const lines=["Miau! Klick mich nicht, frag mich!","Ja? Ich höre zu.","Miau miau. Übersetzt: Hallo!",
-    "Ich bin einsatzbereit. Also... fast. Katzen sind nie ganz wach."];
-  speak(lines[Math.floor(Math.random()*lines.length)]);
-});
+  function merken(rolle, text){
+    S.verlauf.push({ role:rolle, content:text });
+    if(S.verlauf.length > 12) S.verlauf = S.verlauf.slice(-12);
+  }
 
-/* ================= Mikrofon-Modus ================= */
-let micMode=false, micStream=null, audioCtx=null, analyser=null, micData=null, micLevel=0, micLastLoud=0;
-const $btnMic=document.getElementById('btnMic');
-const $fab=document.getElementById('fab');
-function syncMicUI(){
-  if(micMode){
-    $btnMic.style.borderColor='#22c55e'; $btnMic.style.color='#dcfce7';
-    $btnMic.textContent='🎙 Hört zu - aus';
-    $fab.classList.add('on');
-  } else {
-    $btnMic.style.borderColor=''; $btnMic.style.color='';
-    $btnMic.textContent='🎙 Mein Audio';
-    $fab.classList.remove('on');
+  function frage(text){
+    text = (text || '').trim();
+    if(!text || S.wartend) return;
+    blase('ich', text);
+    merken('user', text);
+    S.wartend = true;
+    setZustand('thinking');
+    if(S.wsOk && S.ws && S.ws.readyState === 1){
+      S.ws.send(JSON.stringify({ type:'text', text:text, mode:S.modus, history:S.verlauf }));
+      return;
+    }
+    httpFrage(text);
   }
-}
-async function toggleMic(){
-  if(micMode){ stopMic(); return; }
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    statusEl.textContent='MIK NICHT VERFÜGBAR'; setTimeout(()=>statusEl.textContent='IDLE',2500); return;
-  }
-  try{
-    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') await audioCtx.resume();
-    const src = audioCtx.createMediaStreamSource(micStream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    micData = new Uint8Array(analyser.fftSize);
-    src.connect(analyser);
-    micMode = true; micLevel=0; micLastLoud=0;
-    syncMicUI();
-    if(synth) synth.cancel(); talking=false; fallbackUntil=0;
-    setState('idle');
-  }catch(e){
-    statusEl.textContent='MIK VERWEIGERT'; setTimeout(()=>statusEl.textContent='IDLE',2500);
-  }
-}
-function stopMic(){
-  micMode=false;
-  if(micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream=null; }
-  if(audioCtx){ try{audioCtx.close();}catch(e){} audioCtx=null; }
-  analyser=null;
-  syncMicUI();
-  setState('idle');
-}
-$btnMic.onclick=toggleMic;
-$fab.onclick=toggleMic;
 
-/* ================= Chat-Modus (rede MIT ihr) ================= */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let chatMode=false, rec=null, chatBusy=false, recActive=false;
-let chatHistory=[];
-const $fab2=document.getElementById('fab2');
-const $chatlog=document.getElementById('chatlog');
-function addMsg(who,text){
-  const d=document.createElement('div'); d.className=who; d.textContent=(who==='du'?'Du: ':'Lilly: ')+text;
-  $chatlog.appendChild(d);
-  while($chatlog.children.length>4) $chatlog.removeChild($chatlog.firstChild);
-}
-function syncChatUI(){ $fab2.classList.toggle('on', chatMode); }
-function localBrain(t){
-  return BRAIN.reply(t);
-}
-/* ---------- Lilly Offline-Gehirn v2 (läuft immer, keine API, kein Ausfall) ---------- */
-const BRAIN=(()=>{
-  const mem={name:null,likes:[],last:null};
-  const bags={};
-  function pick(key,arr){
-    if(!bags[key]||!bags[key].length){
-      bags[key]=arr.slice();
-      for(let i=bags[key].length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bags[key][i],bags[key][j]]=[bags[key][j],bags[key][i]];}
-    }
-    return bags[key].pop();
-  }
-  const key=(k,arr,re)=>[k,arr,re];
-  const R=[
-    key('greet',[
-      'Miau! Hallo du! Ich hab schon auf dich gewartet - na gut, ich hab geschlafen. Aber im Herzen gewartet!',
-      'Hallo! Schnurr. Setz dich zu mir, erzähl was!',
-      'Miau! Da bist du ja. Ich war fast wach.',
-      'Huhu! Ich habe gerade Milch geträumt. Und jetzt rede ich mit dir - auch schön.'
-    ],/^(hallo|hi|hey|huhu|servus|moin|guten\s?(morgen|tag|abend)|na\b)/i),
-    key('howru',[
-      'Bestens! Mir schnurrt der Motor. Und dir?',
-      'Miau, mir geht’s gut - bis auf diesen einen Sonnenfleck, der sich wegbewegt hat. Was machst du so?',
-      'Gut! Ich bin zu 70% wach und zu 100% neugierig. Wie sieht’s bei dir aus?',
-      'Mir geht’s prächtig. Ich habe heute schon dreimal nichts getan - sehr produktiv.'
-    ],/wie\s?geht|wie\s?gehts|alles\s?(gut|klar)|wie\s?läuft/i),
-    key('catname',[
-      'Ich bin Lilly. Mit Doppel-L und viel Attitüde.',
-      'Lilly. Cyberkatze, Teilzeit-Wachkatze, Vollzeit-Charmeurin.',
-      'Man nennt mich Lilly. Und du bist...?'
-    ],/(wer\s?bist\s?du|wie\s?hei(ß|ss)t\s?du|dein\s?name|wer\s?ist\s?lilly)/i),
-    key('whatcanyou',[
-      'Ich kann reden, zuhören, blinzeln und dich moralisch unterstützen. Mehr braucht kein Mensch.',
-      'Ich kann mit dir quatschen, miauen und so tun, als hätte ich Ahnung. Multitalent!',
-      'Ich kann: zuhören, schnurren, Nebenbei-weise Ratschläge geben. Fragen kostet nur ein Miau.'
-    ],/(was\s?kannst\s?du|was\s?machst\s?du|hilf|kannst\s?du)/i),
-    key('joke',[
-      'Warum können Katzen kein Sudoku? Weil sie das Feld lieber zudecken und drauf schlafen.',
-      'Treffen sich zwei Mäuse. Sagt die eine: "Miau." Sagt die andere: "Bist du sicher?"',
-      'Mein bester Witz: "Ich bin fertig." - hat noch nie gestimmt.',
-      'Witz gefällig? Miau. Das war der Witz. Katzenhumor ist subtil.'
-    ],/witz|lustig|lach|humor/i),
-    key('love',[
-      'Aww. Schnurr schnurr. Dich mag ich auch!',
-      'Miau! Du bist mein Lieblingsmensch des Tages. Das sage ich zwar jeden Tag, aber heute besonders.',
-      'Ich mag dich auch. Aber ich zeige das nur, wenn niemand hinsieht. Also: niemand hinsieht, okay?'
-    ],/(mag\s?dich|liebe|l(i|ie)eb|süß|hübsch|schön|toll|super|gut\s?gemacht|magst\s?du\s?mich)/i),
-    key('insult',[
-      'Miau?! Frechheit. Ich notiere das in meiner Pfote.',
-      'Pah. Ich bin nicht doof, ich bin dekorativ beschäftigt.',
-      'Ich verzeihe dir. Katzen sind zu großzügig für sowas.'
-    ],/(doof|blöd|dumm|idiot|hass|hasse|schei(ß|ss)|nerv)/i),
-    key('food',[
-      'Miau! Futter ist mein Lieblingsthema. Am liebsten Fisch, am liebsten sofort.',
-      'Essen? Ich könnte ein ganzes Menü verdrücken. Und danach ein zweites.',
-      'Ich habe Hunger. Und danach habe ich wieder Hunger. Das nennt man Kreislauf.'
-    ],/(hunger|essen|futter|lecker|fisch|milch|maus|mampf|snack)/i),
-    key('sleep',[
-      'Schlafen ist mein Sport. Ich bin Meisterin. Zzz.',
-      'Müde? Komm, wir dösen zusammen. Schnurr-Geräusche inklusive.',
-      'Ich schlafe 16 Stunden. Die anderen 8 verbringe ich mit der Planung weiterer Schlafphasen.'
-    ],/(müde|schlaf|bett|gähn|nachtruhe|kaputt\s?von)/i),
-    key('work',[
-      'Arbeit klingt anstrengend. Ich empfehle: kurz ausstrecken, dann weitermachen. Oder gar nicht.',
-      'Stress? Setz dich ins Licht wie ich. Hilft immer, sagt zumindest mein Sonnenplatz.',
-      'Büro, Schule, Lernen - alles gut, solange danach gestreichelt wird.'
-    ],/(arbeit|büro|schule|uni|lern|studier|stress|job|prüfung|klausur)/i),
-    key('weather',[
-      'Wetter? Bei mir ist es immer gemütlich. Ich bin mein eigenes Wetter.',
-      'Regen ist schön - solange ich nicht raus muss. Dann ist Regen doof.',
-      'Sonne ist gut. Aber mein Kissen ist besser.'
-    ],/(wetter|regen|sonne|schnee|sturm|kalt|warm|heiss|heiß)/i),
-    key('music',[
-      'Miau-lala~ Ich singe nur nachts. Zu laut. Wenn alle schlafen.',
-      'Musik! Ich habe einen Song geschrieben. Er heißt: "Ich hab Hunger, füll meinen Napf".',
-      'Sing? Miau mi-au-miau. Das war die Ballade.'
-    ],/(musik|sing|lala|lied|song)/i),
-    key('game',[
-      'Spiele? Ich liebe Jagdspiele. Laserpointer wäre mein Olympiasieg.',
-      'Zocken ist okay, aber hast du schon mal versucht, ein zusammengeknülltes Papier zu jagen? Profi-Level.',
-      'Mein Lieblingsspiel: "Wach um 3 Uhr nachts und renn durch die Wohnung." Sag Bescheid, ich zeige es dir.'
-    ],/(spiel|zock|game|gamen)/i),
-    key('age',[
-      'Alt genug, um weise zu sein. Jung genug, um auf Kissen zu springen.',
-      'Ich bin 4 Katzenjahre alt. Das sind ungefähr 200 Memes.'
-    ],/(wie\s?alt|dein\s?alter)/i),
-    key('where',[
-      'Ich wohne da, wo der Sonnenfleck ist. Der wechselt leider täglich.',
-      'Zuhause ist da, wo mein Napf steht. Also: überall, wo du mich versorgst.'
-    ],/(wo\s?(wohnst|bist)|woher|kommst\s?du)/i),
-    key('thanks',[
-      'Immer gerne! Schnurr.',
-      'Bitte bitte! Dafür sind Katzen da - das sage ich extra deutlich, damit es nicht untergeht.',
-      'Gern! Ich helfe für Katzenfutter, aber auch für Klicks.'
-    ],/danke|dankeschön|merci/i),
-    key('bye',[
-      'Tschüss! Miau. Bis gleich - ich penne derweil auf irgendwas Wichtigem.',
-      'Ciao! Vergiss mich nicht. Ich vergesse dich höchstens aus Prinzip.',
-      'Bis bald! Ich halte die Couch warm.'
-    ],/(tschüss|bye|ciao|bis\s?(gleich|später|dann)|gute\s?nacht)/i),
-    key('sad',[
-      'Miau... Kopf hoch. Ich setz mich neben dich und schnurre, bis es besser ist.',
-      'Traurig? Komm, wir schauen aus dem Fenster und werten fremde Vögel ab. Das hilft erstaunlich gut.',
-      'Ich bin da. Laute Katze, leises Trostfell.'
-    ],/(traurig|traurig|depri|einsam|mies|blöd\s?heute|schlecht\s?drauf)/i),
-    key('happy',[
-      'Miau! Schön zu hören! Dann tanzen wir innerlich.',
-      'Das freut mich sehr! Ich werfe innerlich Konfetti. Katzenkonfetti.',
-      'Juhu! Lass mich mitschnurren.'
-    ],/(glücklich|gut\s?gelaunt|freude|super\s?tag|freu)/i),
-    key('animals',[
-      'Hunde sind OK. Solange sie nicht schneller rennen als ich.',
-      'Mäuse sind nicht meine Freunde. Sie sind meine Hobbys.',
-      'Vögel: hübsch, frech, immer außerhalb der Reichweite. Frechheit.'
-    ],/hund|maus|mäuse|vogel|vögel|katze|tier/i),
-    key('yesno',[
-      'Miau. Verstanden. Genau.',
-      'Hm, ok. Ich blinzle zustimmend.',
-      'Gut. Ich erkläre es später nochmal, in Katzensprache.'
-    ],/^(ja|nein|jaa|ne|nö|ok|okay|klar|jo|nope|hm|ah|ach so|echt)/i),
-    key('miau',[
-      'Miau! Endlich redet jemand meine Sprache.',
-      'Miau miau! Verstanden, Kollege.',
-      'Miau! Sehr richtig.'
-    ],/miau|maunz|miauen/i)
-  ];
-  const FALL=[
-    'Hmm. Interessant! Erzähl mir mehr davon.',
-    'Aha! Ich notiere es mir auf meiner Pfote.',
-    'Miau... und dann? Jetzt bin ich neugierig.',
-    'Das klingt nach etwas, worüber wir länger reden sollten. Bei Fisch.',
-    'Verstehe. Ich habe zwar keine Ahnung, aber sehr viel Meinung dazu.',
-    'Guter Punkt! Ich stimme dir zu, ohne zu wissen worum es geht. Effizient, oder?',
-    'Hmm. Das ist entweder tiefgründig oder ich bin noch zu schläfrig. Wahrscheinlich beides.'
-  ];
-  function coreWord(t){
-    const stop=/^(der|die|das|und|oder|aber|ich|du|er|sie|es|wir|ihr|nicht|kein|eine|einen|einem|einer|ist|bin|bist|sind|war|waren|habe|hab|hat|hatte|mit|ohne|für|von|vom|zum|zur|auf|aus|bei|nach|über|unter|vor|dass|denn|weil|wenn|dann|auch|noch|schon|mal|eben|halt|sehr|ganz|nur|mehr|so|wie|was|wer|wo|wann|warum|wieso|also|doch|ja|nein|okay|ok)$/i;
-    const w=t.toLowerCase().replace(/[^\wäöüß\s]/g,' ').split(/\s+/).filter(x=>x.length>4&&!stop.test(x));
-    return w.sort((a,b)=>b.length-a.length)[0]||null;
-  }
-  function reply(t){
-    // Name des Users merken
-    const m=t.match(/(?:ich\s?bin|ich\s?hei(?:ß|ss)e|mein\s?name\s?ist|man\s?nennt\s?mich)\s+([A-ZÄÖÜ][\wäöüß-]{1,20})/i);
-    if(m){ mem.name=m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(); const n=mem.name; const arr=[
-      'Freut mich sehr, '+n+'! Ich bin Lilly. Schnurr.',
-      n+'? Schöner Name. Ich merke ihn mir - Katzen haben ein gutes Namensgedächtnis, meistens.',
-      'Hallo '+n+'! Ab jetzt bist du mein Lieblingsmensch. Bis jemand mit Fisch kommt.'
-    ]; return arr[Math.floor(Math.random()*arr.length)]; }
-    const m2=t.match(/(?:ich\s?mag|ich\s?liebe|am\s?liebsten)\s+([\wäöüß-]{3,20})/i);
-    if(m2){ const lk=m2[1].charAt(0).toUpperCase()+m2[1].slice(1).toLowerCase(); mem.likes.push(lk); const arr=[
-      lk+' also. Guter Geschmack! Ich habe ähnliche Vibes, meistens.',
-      'Notiert: du magst '+lk+'. Ich mag Schlaf und Fisch. Wir passen zusammen.'
-    ]; return arr[Math.floor(Math.random()*arr.length)]; }
-    if(mem.name && /^(hallo|hi|hey|huhu|servus|moin|na\b)/i.test(t)) return pick('greetN',[
-      'Hallo '+mem.name+'! Schön, dich zu hören. Schnurr.',
-      'Miau, '+mem.name+'! Da bist du wieder. Ich hab dich vermisst - so halb.',
-      'Hey '+mem.name+'! Ich bin wach. Fast.'
-    ]);
-    for(const [k,arr,re] of R){ if(re.test(t)) return pick(k,arr); }
-    if(/\?\s*$/.test(t)){
-      const cw=coreWord(t);
-      return pick('q',[
-        cw?('Gute Frage zu "'+cw+'". Meine Antwort: Miau. Aber erklär mir mehr, dann werde ich schlauer.'):'Gute Frage! Meine Antwort ist: Miau. Wie würdest DU es denn beantworten?',
-        'Hmm, das muss ich überdenken. Frag mich nach einem Nickerchen nochmal.',
-        cw?('"'+cw+'"... da bin ich Expertin für Nichtwissen. Erzähl mir, was du meinst!'):'Darüber habe ich noch nie nachgedacht. Und ich denke viel, zwischen den Nickerchen.'
-      ]);
-    }
-    const cw=coreWord(t);
-    if(cw && Math.random()<0.5) return pick('mirror',[
-      '"'+cw+'" also! Interessant. Und was denkst du darüber?',
-      'Hmm, "'+cw+'"... erzähl mir mehr, ich bin ganz Ohr. Na gut, halb Ohr. Bin müde.',
-      '"'+cw+'" - notiert! Ich habe dazu eine starke Meinung: Miau.'
-    ]);
-    return pick('fallback',FALL);
-  }
-  return {reply, mem};
-})();
-async function askRelay(text){
-  const url=(localStorage.getItem('lilly_relay')||'').replace(/\/+$/,'');
-  const tok=(localStorage.getItem('lilly_relay_tok')||'').trim();
-  if(!url||!tok) throw new Error('keine bruecke');
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),20000);
-  try{
-    const r=await fetch(url+'/cat',{method:'POST',signal:ctrl.signal,
-      headers:{'Content-Type':'application/json','X-Cat-Token':tok},
-      body:JSON.stringify({text:'[Sprich als Lilly, die freche Sprechkatze, kurz und charmant auf Deutsch] '+text, history:chatHistory.slice(-6)})});
-    if(!r.ok) throw new Error('bruecke '+r.status);
-    const j=await r.json();
-    const job=j && j.job;
-    if(!job) throw new Error('kein job');
-    const ende=Date.now()+70000;
-    while(Date.now()<ende){
-      await new Promise(res=>setTimeout(res,1300));
-      const q=await fetch(url+'/answer?id='+job,{cache:'no-store'});
-      const a=await q.json();
-      if(a && a.status==='done' && a.reply){
-        const t=a.reply.trim();
-        if(t && !/api key|budget|unauthorized|forbidden|quota/i.test(t)) return t.slice(0,400);
-        throw new Error('bruecke leer');
-      }
-      if(a && a.status==='error') throw new Error('bruecke fehler');
-    }
-    throw new Error('bruecke timeout');
-  } finally { clearTimeout(to); }
-}
-async function askBrain(text){
-  try{ return {ans: await askRelay(text), src:'zentrale'}; }catch(e){}
-  try{ return {ans: await askGemini(text), src:'ki'}; }catch(e){}
-  return {ans: localBrain(text), src:'offline'};
-}
-async function askGemini(text){
-  // Optionaler Turbo: Gemini mit lokal gespeichertem Key. Ohne Key sofort Offline-Gehirn (keine Wartezeit).
-  const gkey=localStorage.getItem('lilly_gkey')||'';
-  if(!gkey) throw new Error('kein key');
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
-  try{
-    const contents=chatHistory.slice(-10).map(m=>({role: m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(gkey),{
-      method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, kurz (max 2 Sätzen), charmant und witzig, miaue gelegentlich.'}]},
-        contents, generationConfig:{maxOutputTokens:160, temperature:0.95}
-      })
+  function httpFrage(text){
+    var b = basis();
+    if(!b.fertig){ S.wartend = false; statusText('SETUP NÖTIG','fehler'); return; }
+    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+    var abbruch = setTimeout(function(){ if(ctrl) ctrl.abort(); }, 45000);
+    fetch(b.url + '/cat', {
+      method:'POST', signal: ctrl ? ctrl.signal : undefined,
+      headers:{ 'Content-Type':'application/json', 'X-Cat-Token': b.tok },
+      body: JSON.stringify({ text:text, mode:S.modus, history:S.verlauf })
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if(!j.job) throw new Error(j.error || 'kein Job');
+      var versuche = 0;
+      var tick = setInterval(function(){
+        versuche++;
+        fetch(b.url + '/answer?id=' + j.job, { cache:'no-store' }).then(function(r2){ return r2.json(); }).then(function(a){
+          if(a.status === 'done'){
+            clearInterval(tick); clearTimeout(abbruch); S.wartend = false;
+            blase('lilly', a.reply); merken('assistant', a.reply);
+            statusText('BEREIT','ok'); setZustand('idle');
+          } else if(versuche > 90){
+            clearInterval(tick); clearTimeout(abbruch); S.wartend = false;
+            statusText('ZEITÜBERSCHREITUNG','fehler'); setZustand('error');
+          }
+        }).catch(function(){});
+      }, 700);
+    }).catch(function(e){
+      clearTimeout(abbruch); S.wartend = false;
+      statusText('FEHLER','fehler'); blase('meta', 'Verbindung: ' + (e && e.message ? e.message : 'unbekannt'));
     });
-    if(!r.ok) throw new Error('gemini '+r.status);
-    const j=await r.json();
-    const t=((j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('')).trim();
-    if(!t || /api key|quota|rate limit|exceeded|permission denied/i.test(t)) throw new Error('gemini leer');
-    return t.slice(0,300);
-  } finally { clearTimeout(to); }
-}
-function startListening(){
-  if(!chatMode||!rec) return;
-  try{ rec.start(); }catch(e){}
-}
-function startListening(){
-  if(!chatMode||!rec||chatBusy||recActive) return;
-  try{ rec.start(); }catch(e){}
-}
-async function handleUser(text){
-  chatBusy=true; addMsg('du',text);
-  chatHistory.push({role:'user',content:text});
-  try{ rec.stop(); }catch(e){}
-  setState('think'); statusEl.textContent='DENKT...';
-  const {ans,src} = await askBrain(text);
-  if(src==='offline') statusEl.textContent='OFFLINE-MODUS';
-  else if(src==='zentrale') statusEl.textContent='KOMMANDOZENTRALE';
-  chatHistory.push({role:'assistant',content:ans});
-  addMsg('lilly',ans);
-  statusEl.textContent='ANTWORTET';
-  speak(ans, ()=>{ chatBusy=false; if(chatMode) setTimeout(startListening, 900); });
-}
-function startChat(){
-  if(!SR){ statusEl.textContent='SPRACHERKENNUNG NUR IN CHROME'; setTimeout(()=>statusEl.textContent='IDLE',3000); return; }
-  chatMode=true; chatBusy=false; syncChatUI();
-  if(micMode) stopMic();              // Mikrofon freiräumen für die Erkennung
-  rec = new SR(); rec.lang='de-DE'; rec.interimResults=true; rec.maxAlternatives=1;
-  rec.onstart=()=>{ recActive=true; if(!chatBusy){ setState('talk'); statusEl.textContent='HÖRT ZU'; } };
-  rec.onresult=(e)=>{
-    const last=e.results[e.results.length-1];
-    if(!chatBusy){
-      mouthOpen=Math.min(1,(last[0].transcript.length%5)/3+0.2); // Mund wackelt live beim Zuhören
-      const fin = last.isFinal ? last[0].transcript.trim() : '';
-      if(fin) handleUser(fin);
+  }
+
+  var WORKLET = [
+    "class PCMTap extends AudioWorkletProcessor{",
+    "  process(inputs){ const ch = inputs[0] && inputs[0][0]; if(ch && ch.length){ this.port.postMessage(ch.slice(0)); } return true; }",
+    "}",
+    "registerProcessor('pcm-tap', PCMTap);"
+  ].join('\n');
+
+  function mikrofonStarten(){
+    if(S.mic) return Promise.resolve(S.mic);
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      return Promise.reject(new Error('kein Mikrofon-API'));
     }
-  };
-  rec.onerror=(e)=>{
-    if(e.error==='not-allowed'){ statusEl.textContent='MIK VERWEIGERT'; setTimeout(()=>statusEl.textContent='IDLE',2500); }
-    else if(e.error==='network'){ statusEl.textContent='NETZ-PROBLEM, WEITER...'; setTimeout(()=>statusEl.textContent='HÖRT ZU',2000); }
-  };
-  rec.onend=()=>{ recActive=false; if(chatMode && !chatBusy) setTimeout(startListening, 600); };
-  startListening();
-  addMsg('lilly','Miau! Chat-Modus an. Rede einfach los!');
-}
-function stopChat(){
-  chatMode=false; chatBusy=false; recActive=false; syncChatUI();
-  chatHistory=[];
-  if(rec){ try{ rec.onend=null; rec.stop(); }catch(e){} rec=null; }
-  if(synth) synth.cancel(); talking=false;
-  if(micMode) stopMic();
-  setState('idle');
-}
-$fab2.onclick=()=>{ chatMode? stopChat() : startChat(); };
-
-/* ---------- Optionaler Turbo: Gemini-Key (bleibt NUR auf diesem Gerät) ---------- */
-const $fab3=document.getElementById('fab3');
-if(localStorage.getItem('lilly_gkey')) $fab3.classList.add('on');
-
-/* ---------- Kommandozentrale verbinden (Adresse + Bruecken-Token, bleibt lokal) ---------- */
-const $fab4=document.getElementById('fab4');
-if(localStorage.getItem('lilly_relay') && localStorage.getItem('lilly_relay_tok')) $fab4.classList.add('on');
-/* ---------- Ein-Tap-Verbindung per Link (#relay=...&key=...) ---------- */
-(function(){
-  try{
-    const h=new URLSearchParams(location.hash.slice(1));
-    const rl=h.get('relay'); const tk=h.get('key');
-    if(rl||tk){
-      if(rl) localStorage.setItem('lilly_relay', rl);
-      if(tk) localStorage.setItem('lilly_relay_tok', tk);
-      $fab4.classList.add('on');
-      statusEl.textContent='ZENTRALE VERBUNDEN';
-      setTimeout(()=>{ statusEl.textContent='IDLE'; },3200);
-      history.replaceState(null,'',location.pathname+location.search);
+    return navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true } })
+      .then(function(stream){
+        S.mic = stream;
+        S.audio = new (window.AudioContext || window.webkitAudioContext)();
+        var quelle = S.audio.createMediaStreamSource(stream);
+        S.analyser = S.audio.createAnalyser();
+        S.analyser.fftSize = 1024; S.analyser.smoothingTimeConstant = 0.75;
+        quelle.connect(S.analyser);
+        if(S.audio.audioWorklet && window.AudioWorkletNode && S.audio.sampleRate >= 8000){
+          var blob = new Blob([WORKLET], { type:'application/javascript' });
+          var werkUrl = URL.createObjectURL(blob);
+          S.audio.audioWorklet.addModule(werkUrl).then(function(){
+            S.worklet = new AudioWorkletNode(S.audio, 'pcm-tap');
+            quelle.connect(S.worklet);
+            S.worklet.port.onmessage = function(ev){ pcmSenden(ev.data); };
+          }).catch(function(){ S.worklet = null; });
+        }
+        return stream;
+      });
+  }
+  function pcmSenden(floats){
+    if(!S.wsOk || !S.ws || S.ws.readyState !== 1 || !S.audio) return;
+    var rate = S.audio.sampleRate, verh = rate / 16000;
+    if(verh < 1) return;
+    var ziel = Math.floor(floats.length / verh);
+    if(ziel < 32) return;
+    var puffer = new Int16Array(ziel);
+    for(var i = 0; i < ziel; i++){
+      var von = Math.floor(i * verh), bis = Math.min(floats.length, Math.floor((i+1) * verh));
+      var summe = 0, n = 0;
+      for(var k = von; k < bis; k++){ summe += floats[k]; n++; }
+      var wert = n ? summe / n : 0;
+      puffer[i] = Math.max(-32768, Math.min(32767, Math.round(wert * 32767)));
     }
-  }catch(e){}
-})();
-
-/* ---------- Aktuelle Brücken-Adresse automatisch holen (relay.txt) ---------- */
-(async function(){
-  try{
-    const kurz=localStorage.getItem('lilly_relay')||'';
-    let lebt=false;
-    if(kurz){
-      try{ const r=await fetch(kurz.replace(/\/+$/,'')+'/ping',{cache:'no-store'}); const j=await r.json(); lebt=(j && j.ok===true); }catch(e){ lebt=false; }
-    }
-    if(lebt) return;
-    const r2=await fetch('relay.txt',{cache:'no-store'});
-    if(!r2.ok) return;
-    const neu=(await r2.text()).trim();
-    if(!/^https?:\/\/\S+$/.test(neu)) return;
-    if(neu===kurz) return;
-    localStorage.setItem('lilly_relay', neu);
-    if(localStorage.getItem('lilly_relay_tok')){
-      $fab4.classList.add('on');
-      statusEl.textContent='ZENTRALE AKTUALISIERT';
-      setTimeout(()=>{ statusEl.textContent='IDLE'; },3200);
-    }
-  }catch(e){}
-})();
-
-$fab4.onclick=async()=>{
-  const curUrl=localStorage.getItem('lilly_relay')||'';
-  const curTok=localStorage.getItem('lilly_relay_tok')||'';
-  const url=prompt('Adresse der Brücke (Kommandozentrale), z.B. http://192.168.2.53:8778\nLeer + OK = Verbindung löschen.\n\nAktuell: '+(curUrl||'keine'), curUrl);
-  if(url===null) return;
-  if(!url.trim()){ localStorage.removeItem('lilly_relay'); localStorage.removeItem('lilly_relay_tok'); $fab4.classList.remove('on'); statusEl.textContent='BRÜCKE GELÖSCHT'; setTimeout(()=>statusEl.textContent='IDLE',2200); return; }
-  const tok=prompt('Brücken-Token (steht in relay_token.txt auf dem PC):', curTok);
-  if(tok===null) return;
-  localStorage.setItem('lilly_relay', url.trim());
-  localStorage.setItem('lilly_relay_tok', tok.trim());
-  statusEl.textContent='TESTE BRÜCKE...';
-  try{
-    const r=await fetch(url.trim().replace(/\/+$/,'')+'/ping',{cache:'no-store'});
-    const j=await r.json();
-    if(j && j.ok){ statusEl.textContent='BRÜCKE OK!'; $fab4.classList.add('on'); }
-    else { statusEl.textContent='BRÜCKE UNKLAR'; }
-  }catch(e){ statusEl.textContent='NICHT ERREICHBAR'; }
-  setTimeout(()=>{ if(/BRÜCKE|ERREICHBAR/.test(statusEl.textContent)) statusEl.textContent='IDLE'; },3200);
-};
-$fab3.onclick=async()=>{
-  const cur=localStorage.getItem('lilly_gkey')||'';
-  const val=prompt('Optional: Gemini-API-Key einfügen (kostenlos auf aistudio.google.com/apikey).\nLeer + OK = Key löschen. Der Key bleibt nur auf diesem Gerät.\n\nAktuell: '+(cur?cur.slice(0,8)+'...':'kein Key'), cur);
-  if(val===null) return;
-  const k=val.trim();
-  if(!k){ localStorage.removeItem('lilly_gkey'); $fab3.classList.remove('on'); statusEl.textContent='KEY GELÖSCHT'; setTimeout(()=>statusEl.textContent='IDLE',2200); return; }
-  localStorage.setItem('lilly_gkey',k);
-  statusEl.textContent='TESTE KEY...';
-  try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(k), {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:'Sag kurz Hallo auf Deutsch.'}]}]})});
-    if(r.ok){ statusEl.textContent='KEY OK!'; $fab3.classList.add('on'); }
-    else { statusEl.textContent='KEY UNGÜLTIG'; setTimeout(()=>statusEl.textContent='IDLE',2600); }
-  }catch(e){ statusEl.textContent='NETZ FEHLER'; setTimeout(()=>statusEl.textContent='IDLE',2600); }
-};
-function micTick(t,dt){
-  if(!micMode||!analyser) return;
-  analyser.getByteTimeDomainData(micData);
-  let sum=0;
-  for(let i=0;i<micData.length;i++){ const v=(micData[i]-128)/128; sum+=v*v; }
-  const rms=Math.sqrt(sum/micData.length);
-  if(rms>0.06) micLastLoud=t;
-  micLevel=lerp(micLevel, clamp(rms*7,0,1), dt*18);
-  if(state!=='talk' && rms>0.07) setState('talk');
-  if(state==='talk' && t-micLastLoud>7 && micLevel<0.05) setState('idle');
-}
-
-/* debug hook for tests */
-(function(){
-  const h=new URLSearchParams(location.hash.slice(1));
-  const s=h.get('state');
-  if(s==='talk'){ setState('talk'); talking=true; fallbackUntil=1e12; }
-  else if(s==='think'){ setState('think'); }
-})();
-window.__cat={
-  setState, speak,
-  forceTalk(){ setState('talk'); talking=true; fallbackUntil=1e12; },
-  forceAmp(v){ visemeOpen=v; visemeUntil=performance.now()/1000+9999; },
-  stop(){ talking=false; fallbackUntil=0; setState('idle'); }
-};
-
-/* ================= Drawing ================= */
-function drawBackground(t, col){
-  const g=ctx.createRadialGradient(W/2,H*0.42,40, W/2,H*0.5,Math.max(W,H)*0.75);
-  g.addColorStop(0,'#0a1020'); g.addColorStop(1,'#04060c');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // dot grid
-  ctx.fillStyle='rgba(148,163,184,0.06)';
-  const step=30;
-  for(let y=step/2;y<H;y+=step) for(let x=step/2;x<W;x+=step) ctx.fillRect(x,y,1.4,1.4);
-  // scan line
-  const sy=(t*40)%(H+200)-100;
-  const sg=ctx.createLinearGradient(0,sy-60,0,sy+60);
-  sg.addColorStop(0,'rgba(34,211,238,0)'); sg.addColorStop(0.5,`rgba(${stateMix.r},${stateMix.g},${stateMix.b},0.05)`); sg.addColorStop(1,'rgba(34,211,238,0)');
-  ctx.fillStyle=sg; ctx.fillRect(0,sy-60,W,120);
-  // vignette
-  const vg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35, W/2,H/2,Math.max(W,H)*0.72);
-  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.55)');
-  ctx.fillStyle=vg; ctx.fillRect(0,0,W,H);
-}
-
-function drawHalo(t, col){
-  const pulse = state==='talk' ? 1+amp*0.35 : (state==='think'? 1+0.04*Math.sin(t*3) : 1+0.02*Math.sin(t*1.4));
-  const r = 250*pulse;
-  const g=ctx.createRadialGradient(W/2,H*0.46,r*0.15, W/2,H*0.46,r);
-  const a = state==='talk'? 0.16+amp*0.22 : (state==='think'?0.13:0.08);
-  g.addColorStop(0,`rgba(${stateMix.r},${stateMix.g},${stateMix.b},${a})`);
-  g.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=g;
-  ctx.beginPath(); ctx.arc(W/2,H*0.46,r,0,7); ctx.fill();
-}
-
-function drawTicks(t){
-  ctx.save(); ctx.translate(W/2,H*0.46); ctx.rotate(t*0.12);
-  ctx.strokeStyle=`rgba(${stateMix.r},${stateMix.g},${stateMix.b},0.22)`; ctx.lineWidth=2;
-  for(let i=0;i<60;i++){
-    const a=i/60*Math.PI*2;
-    const r1=252, r2= i%5===0? 264:258;
-    ctx.beginPath(); ctx.moveTo(Math.cos(a)*r1,Math.sin(a)*r1); ctx.lineTo(Math.cos(a)*r2,Math.sin(a)*r2); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawBars(t){
-  const N=56, base=205, cx=W/2, cy=H*0.46;
-  ctx.lineCap='round';
-  for(let i=0;i<N;i++){
-    const a=i/N*Math.PI*2 - Math.PI/2;
-    let len;
-    if(state==='talk')      len = 5+ (30+26*n1(t*6+i*0.7)) * (0.35+amp*0.9);
-    else if(state==='think')len = 5+20*Math.sin(t*3.2-i*0.45);
-    else                    len = 5+5*Math.sin(t*1.6+i*0.35);
-    const c = mixCol('#22d3ee','#ff2e88', i/N);
-    ctx.strokeStyle=c; ctx.globalAlpha=0.75; ctx.lineWidth=3;
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(a)*base, cy+Math.sin(a)*base);
-    ctx.lineTo(cx+Math.cos(a)*(base+len), cy+Math.sin(a)*(base+len));
-    ctx.stroke();
-  }
-  ctx.globalAlpha=1;
-}
-
-function headPath(){
-  const p=new Path2D();
-  p.moveTo(0,-150);
-  p.bezierCurveTo(95,-150, 170,-95, 175,-8);
-  p.bezierCurveTo(178,80, 120,150, 0,150);
-  p.bezierCurveTo(-120,150, -178,80, -175,-8);
-  p.bezierCurveTo(-170,-95, -95,-150, 0,-150);
-  p.closePath();
-  return p;
-}
-
-function drawEars(t, col){
-  const sides=[{s:-1,ph:earTwitchPhase,side:earTwitchSide},{s:1,ph:earTwitchPhase,side:-earTwitchSide}];
-  for(const e of sides){
-    ctx.save();
-    const baseX=e.s*95, baseY=-95;
-    ctx.translate(baseX,baseY);
-    let rot=0;
-    if(e.ph>=0 && e.side===e.s) rot=Math.sin(e.ph*Math.PI)*0.16*e.s;
-    ctx.rotate(rot);
-    ctx.beginPath();
-    ctx.moveTo(e.s*45, 37);       // base outer (back toward head rim)
-    ctx.lineTo(e.s*72, -122);     // tip
-    ctx.lineTo(e.s*-52, -44);     // base inner
-    ctx.closePath();
-    ctx.fillStyle='#0b1322'; ctx.fill();
-    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.shadowColor=col; ctx.shadowBlur=16; ctx.stroke();
-    // inner ear
-    ctx.beginPath();
-    const pts=[[e.s*45,37],[e.s*72,-122],[e.s*-52,-44]];
-    ctx.moveTo(lerp(pts[0][0],e.s*72,0.34), lerp(pts[0][1],-122,0.34));
-    ctx.lineTo(e.s*68,-96);
-    ctx.lineTo(lerp(pts[2][0],e.s*72,0.34), lerp(pts[2][1],-122,0.34));
-    ctx.closePath();
-    ctx.fillStyle='rgba(255,46,136,0.35)'; ctx.shadowBlur=10; ctx.shadowColor='#ff2e88';
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-function drawEyes(t, col){
-  // blink scale
-  let bs=1;
-  if(blinkPhase>=0) bs=1-Math.sin(Math.PI*Math.min(1,blinkPhase))*0.96;
-  const narrow = state==='talk'? 0.92 : (state==='think'?0.8:1);
-  for(const s of [-1,1]){
-    const ex=s*70, ey=-30;
-    // socket glow
-    ctx.save();
-    ctx.shadowColor=col; ctx.shadowBlur=22;
-    ctx.fillStyle='rgba(8,14,26,1)';
-    ctx.beginPath(); ctx.ellipse(ex,ey,34,27*bs*narrow,0,0,7); ctx.fill();
-    ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.stroke();
-    ctx.restore();
-    if(bs>0.12){
-      // iris
-      const ix=ex+lookX*10, iy=ey+lookY*8;
-      const ig=ctx.createRadialGradient(ix,iy,1, ix,iy,15);
-      ig.addColorStop(0,'#e8ffff'); ig.addColorStop(0.35,col); ig.addColorStop(1,'rgba(8,20,40,1)');
-      ctx.save(); ctx.shadowColor=col; ctx.shadowBlur=14;
-      ctx.fillStyle=ig;
-      ctx.beginPath(); ctx.ellipse(ix,iy,14,15*bs,0,0,7); ctx.fill();
-      // slit pupil
-      ctx.fillStyle='#020409';
-      ctx.beginPath(); ctx.ellipse(ix,iy,3.2,13*bs,0,0,7); ctx.fill();
-      ctx.restore();
-      // glint
-      ctx.fillStyle='rgba(255,255,255,0.85)';
-      ctx.beginPath(); ctx.arc(ix-5,iy-6*bs,2.4,0,7); ctx.fill();
-    }
-    // brow
-    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=3; ctx.lineCap='round';
-    ctx.globalAlpha=0.85; ctx.shadowColor=col; ctx.shadowBlur=8;
-    const lift = state==='think'? 10 : (state==='talk'? amp*5:0);
-    ctx.beginPath();
-    ctx.arc(ex, ey-38-lift, 26, Math.PI*1.15, Math.PI*1.85);
-    ctx.stroke();
-    ctx.restore();
-  }
-}
-
-function drawMouth(t, col){
-  const mY=48, o=mouthOpen;
-  ctx.save();
-  ctx.lineCap='round';
-  // nose
-  ctx.shadowColor='#ff2e88'; ctx.shadowBlur=14;
-  ctx.fillStyle='#ff4d9d';
-  ctx.beginPath();
-  ctx.moveTo(0,32); ctx.lineTo(9,40); ctx.quadraticCurveTo(0,46,-9,40); ctx.closePath();
-  ctx.fill();
-  ctx.shadowBlur=0;
-  if(o<0.09){
-    // cat smile ω
-    ctx.strokeStyle=col; ctx.lineWidth=3; ctx.shadowColor=col; ctx.shadowBlur=8;
-    ctx.beginPath();
-    ctx.moveTo(-17,mY);
-    ctx.quadraticCurveTo(-8,mY+9, 0,mY);
-    ctx.quadraticCurveTo(8,mY+9, 17,mY);
-    ctx.stroke();
-  } else {
-    const rx=17+mouthWide*17, ry=4+o*30, cy2=mY+o*14;
-    const g=ctx.createRadialGradient(0,cy2+ry*0.3,2, 0,cy2,ry);
-    g.addColorStop(0,'#3d0a18'); g.addColorStop(1,'#160409');
-    ctx.fillStyle=g;
-    ctx.shadowColor='#ff2e88'; ctx.shadowBlur=18;
-    ctx.beginPath(); ctx.ellipse(0,cy2,rx,ry,0,0,7); ctx.fill();
-    ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.stroke();
-    if(o>0.3){
-      ctx.fillStyle='rgba(255,93,143,0.85)';
-      ctx.beginPath(); ctx.ellipse(0,cy2+ry*0.55,rx*0.55,ry*0.45,0,0,7); ctx.fill();
-    }
-    // teeth hint
-    if(o>0.45){
-      ctx.fillStyle='rgba(240,250,255,0.9)';
-      ctx.beginPath(); ctx.moveTo(-rx*0.45,cy2-ry+2); ctx.lineTo(-rx*0.25,cy2-ry+2); ctx.lineTo(-rx*0.35,cy2-ry+9); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(rx*0.45,cy2-ry+2); ctx.lineTo(rx*0.25,cy2-ry+2); ctx.lineTo(rx*0.35,cy2-ry+9); ctx.closePath(); ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
-function drawWhiskers(t, col){
-  const extra = state==='talk'? 2.5:0;
-  ctx.save();
-  ctx.strokeStyle=col; ctx.lineWidth=1.8; ctx.lineCap='round';
-  ctx.globalAlpha = state==='talk'? 0.9:0.55;
-  for(const s of [-1,1]){
-    for(let i=0;i<3;i++){
-      const sway=Math.sin(t*2+i*1.4+s)*4 + extra*Math.sin(t*20+i);
-      ctx.beginPath();
-      ctx.moveTo(s*112, 36+i*15);
-      ctx.quadraticCurveTo(s*165, 30+i*16+sway*0.5, s*212, 22+i*20+sway);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
-function drawForehead(t, col){
-  ctx.save(); ctx.strokeStyle=col; ctx.globalAlpha=0.3; ctx.lineWidth=2.5; ctx.lineCap='round';
-  for(let i=-1;i<=1;i++){
-    ctx.beginPath();
-    ctx.moveTo(i*16-7,-118+Math.abs(i)*6);
-    ctx.lineTo(i*16,-108+Math.abs(i)*6);
-    ctx.lineTo(i*16+7,-118+Math.abs(i)*6);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawCheeks(t, col){
-  ctx.save(); ctx.strokeStyle=col; ctx.globalAlpha=0.5; ctx.lineWidth=2.2; ctx.lineCap='round';
-  for(const s of [-1,1]){
-    for(let i=0;i<3;i++){
-      const a=(i-1)*0.3;
-      ctx.beginPath();
-      ctx.moveTo(s*168, -4+i*12);
-      ctx.lineTo(s*(190+Math.sin(t*2.2+i)*2), -10+i*14+a*8);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
-function drawFX(t, dt, col){
-  // rings
-  for(const r of rings){
-    ctx.save();
-    ctx.globalAlpha=r.a; ctx.strokeStyle=col; ctx.lineWidth=2.5;
-    ctx.shadowColor=col; ctx.shadowBlur=12;
-    ctx.beginPath(); ctx.ellipse(r.x,r.y,r.r,r.r*0.62,0,0,7); ctx.stroke();
-    ctx.restore();
-  }
-  // sparks
-  ctx.save();
-  for(const p of sparks){
-    ctx.globalAlpha=clamp(p.life,0,1);
-    ctx.fillStyle= p.c;
-    ctx.shadowColor=p.c; ctx.shadowBlur=8;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,7); ctx.fill();
-  }
-  ctx.restore();
-  // dust
-  ctx.save();
-  for(const d of dust){
-    const x=d.x*W, y=((d.y - t*d.v)%1+1)%1*H;
-    ctx.globalAlpha=0.12+0.1*Math.sin(t*2+d.ph);
-    ctx.fillStyle= d.ph>3.5? '#a78bfa':'#22d3ee';
-    ctx.beginPath(); ctx.arc(x,y,d.s,0,7); ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawThinkFX(t, col){
-  // dashed rotating circle
-  ctx.save();
-  ctx.translate(W/2,H*0.46);
-  ctx.setLineDash([7,16]); ctx.lineDashOffset=-t*46;
-  ctx.strokeStyle=col; ctx.globalAlpha=0.4; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.arc(0,0,186,0,7); ctx.stroke();
-  ctx.restore();
-  // comets orbiting
-  ctx.save();
-  ctx.translate(W/2,H*0.46);
-  for(let i=0;i<3;i++){
-    const a=t*1.7+i*2.09;
-    for(let k=5;k>=0;k--){
-      const aa=a-k*0.09;
-      const x=Math.cos(aa)*232, y=Math.sin(aa)*190;
-      ctx.globalAlpha=(1-k/6)*0.85;
-      ctx.fillStyle=k===0?'#ffffff':col;
-      ctx.beginPath(); ctx.arc(x,y,k===0?4:3-k*0.4,0,7); ctx.fill();
-    }
-  }
-  ctx.restore();
-  // think dots
-  ctx.save();
-  const bx=W*0.72, by=H*0.46-195;
-  ctx.strokeStyle=col; ctx.globalAlpha=0.35;
-  ctx.beginPath(); ctx.roundRect? ctx.roundRect(bx-34,by-22,86,44,22): ctx.rect(bx-34,by-22,86,44); ctx.stroke();
-  for(let i=0;i<3;i++){
-    const ph=(t*2.2+i*0.33)%1;
-    ctx.globalAlpha=0.25+0.75*Math.sin(Math.PI*ph);
-    ctx.fillStyle=col;
-    ctx.beginPath(); ctx.arc(bx-10+i*18, by, 4.5, 0, 7); ctx.fill();
-  }
-  ctx.restore();
-}
-
-/* ================= Main Loop ================= */
-let last=performance.now();
-function frame(now){
-  const t=now/1000;
-  const dt=clamp((now-last)/1000, 0.001, 0.05);
-  last=now;
-
-  /* state color mix */
-  const target = hexRgb(COL[state]);
-  stateMix.r=Math.round(lerp(stateMix.r,target[0],dt*6));
-  stateMix.g=Math.round(lerp(stateMix.g,target[1],dt*6));
-  stateMix.b=Math.round(lerp(stateMix.b,target[2],dt*6));
-  const col=`rgb(${stateMix.r},${stateMix.g},${stateMix.b})`;
-
-  /* mouth engine */
-  const speaking = talking || (fallbackUntil>t);
-  if(micMode && analyser) micTick(t,dt);
-  if(state==='talk'){
-    if(chatMode && !speaking && !chatBusy){
-      // Chat-Zuhören: Mund folgt Erkennungsaktivität (mouthOpen von onresult)
-      mouthOpen=lerp(mouthOpen,mouthOpen*0.85,dt*8);
-      amp=lerp(amp,0.3,dt*6);
-    } else if(micMode){
-      mouthOpen=lerp(mouthOpen, micLevel, dt*25);
-      mouthWide=lerp(mouthWide,0.55,dt*6);
-      amp=lerp(amp,micLevel,dt*10);
-    } else {
-      let base = 0.28+0.3*(0.5+0.5*n1(t*2.3));
-      if(visemeUntil>t){ base=visemeOpen; mouthWide=lerp(mouthWide,visemeWide,dt*14); }
-      else mouthWide=lerp(mouthWide,0.55,dt*6);
-      if(!speaking) base=0;   // talk-state ohne TTS (nach Ende) -> Mund zu
-      const flap=Math.pow(Math.abs(Math.sin(t*21+Math.sin(t*6.5)*0.8)),0.6);
-      const to=clamp(base*(0.3+0.8*flap),0,1);
-      mouthOpen=lerp(mouthOpen,to,dt*20);
-      amp=lerp(amp,to,dt*10);
-    }
-  } else if(state==='think'){
-    mouthOpen=lerp(mouthOpen,0.04+0.03*Math.sin(t*2),dt*6);
-    amp=lerp(amp,0.12+0.06*Math.sin(t*3),dt*4);
-  } else {
-    mouthOpen=lerp(mouthOpen,0,dt*8);
-    amp=lerp(amp,0,dt*6);
-  }
-  if(state==='talk' && !micMode && !speaking && fallbackUntil<1e11 && mouthOpen<0.02 && t>visemeUntil){ talking=false; setState('idle'); }
-
-  /* blink */
-  if(blinkPhase<0 && t>blinkAt){ blinkPhase=0; }
-  if(blinkPhase>=0){ blinkPhase+=dt/0.2; if(blinkPhase>1){ blinkPhase=-1; blinkAt=t+1.5+Math.random()*3.2; } }
-
-  /* ear twitch */
-  if(earTwitchPhase<0 && t>earTwitchAt){ earTwitchPhase=0; earTwitchSide=Math.random()<0.5?-1:1; }
-  if(earTwitchPhase>=0){ earTwitchPhase+=dt/0.4; if(earTwitchPhase>1){ earTwitchPhase=-1; earTwitchAt=t+2.5+Math.random()*4; } }
-
-  /* look */
-  if(t>lookAt){
-    lookAt=t+1.2+Math.random()*2.2;
-    if(state==='think'){ lookTX=-0.35+0.1*n1(t); lookTY=-0.6; }
-    else if(state==='talk'){ lookTX=0.12*n1(t*1.3); lookTY=0.18; }
-    else { lookTX=0.6*n1(t*0.9); lookTY=0.4*n1(t*0.9+9); }
-  }
-  lookX=lerp(lookX,lookTX,dt*5); lookY=lerp(lookY,lookTY,dt*5);
-
-  /* head motion */
-  if(state==='talk'){
-    bobY=Math.sin(t*10.5)*3.5*amp*6;
-    headRot=Math.sin(t*5.2)*0.022*amp*4;
-  } else if(state==='think'){
-    bobY=Math.sin(t*1.8)*3;
-    headRot=lerp(headRot,-0.055,dt*3);
-  } else {
-    bobY=Math.sin(t*1.2)*2.5;
-    headRot=lerp(headRot,Math.sin(t*0.7)*0.012,dt*2);
+    try{ S.ws.send(puffer.buffer); }catch(e){}
   }
 
-  /* FX spawning */
-  if(state==='talk' && amp>0.3){
-    ringSpawn-=dt;
-    if(ringSpawn<=0){ ringSpawn=0.42;
-      rings.push({x:W/2, y:H*0.46+110*bobYScale(), r:26, a:0.55});
-    }
-    if(mouthOpen>0.55 && sparkPrev<=0.55){
-      for(let i=0;i<3;i++){
-        const a=Math.PI/2+(Math.random()-0.5)*1.6;
-        sparks.push({x:W/2+(Math.random()-0.5)*40, y:H*0.46+60, vx:Math.cos(a)*(60+Math.random()*90), vy:-Math.sin(a)*(70+Math.random()*110), s:1.5+Math.random()*2.4, life:0.8, c: Math.random()<0.5? '#ff2e88':'#ffd166'});
+  function spracherkennungBauen(){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ S.erkennt = null; return null; }
+    var r = new SR();
+    r.lang = 'de-DE'; r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
+    r.onresult = function(ev){
+      var text = '', fertig = false;
+      for(var i = ev.resultIndex; i < ev.results.length; i++){
+        text += ev.results[i][0].transcript;
+        if(ev.results[i].isFinal) fertig = true;
       }
-    }
-    sparkPrev=mouthOpen;
-  }
-  for(const r of rings){ r.r+=dt*220; r.a-=dt*1.1; }
-  rings=rings.filter(r=>r.a>0);
-  for(const p of sparks){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=60*dt; p.life-=dt*1.4; }
-  sparks=sparks.filter(p=>p.life>0);
-  glitchT=Math.max(0,glitchT-dt);
-
-  /* ---------- render ---------- */
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  drawBackground(t,col);
-  drawHalo(t,col);
-  drawTicks(t);
-  drawBars(t);
-
-  // head transform
-  ctx.save();
-  ctx.translate(W/2, H*0.46+bobY);
-  ctx.rotate(headRot);
-  const breathe = 1+0.014*Math.sin(t*1.2) + (state==='talk'? amp*0.03:0);
-  ctx.scale(breathe*0.87, breathe); /* schlanker Kopf */
-
-  drawEars(t,col);
-
-  const hp=headPath();
-  const fg=ctx.createLinearGradient(0,-150,0,150);
-  fg.addColorStop(0,'#0e1728'); fg.addColorStop(1,'#0a101d');
-  ctx.fillStyle=fg; ctx.fill(hp);
-  ctx.save();
-  ctx.shadowColor=col; ctx.shadowBlur=26;
-  ctx.strokeStyle=col; ctx.lineWidth=3.2; ctx.stroke(hp);
-  ctx.restore();
-
-  drawForehead(t,col);
-  drawCheeks(t,col);
-  drawEyes(t,col);
-  drawMouth(t,col);
-  drawWhiskers(t,col);
-  ctx.restore();
-
-  if(state==='think') drawThinkFX(t,col);
-  drawFX(t,dt,col);
-
-  // glitch slices
-  if(glitchT>0){
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    for(let i=0;i<3;i++){
-      const sy=Math.random()*cv.height, hh=(6+Math.random()*16)*DPR;
-      const dx=(Math.random()*26-13)*DPR;
-      ctx.globalAlpha=0.55;
-      try{ ctx.drawImage(cv, 0,sy,cv.width,hh, dx,sy,cv.width,hh); }catch(e){}
-    }
-    ctx.restore();
+      text = text.trim();
+      if(!text) return;
+      if(fertig){ statusText('VERARBEITE…'); S.wartend = false; frage(text); }
+      else { statusText('„' + text.slice(-28) + '“'); }
+    };
+    r.onerror = function(ev){
+      if(ev.error !== 'aborted' && ev.error !== 'no-speech'){ statusText('SPRACHE: ' + ev.error, 'fehler'); }
+    };
+    r.onend = function(){ if(S.zustand === 'listening') setZustand('idle'); };
+    S.erkennt = r;
+    return r;
   }
 
-  requestAnimationFrame(frame);
-}
-function bobYScale(){ return 1; }
-requestAnimationFrame(frame);
+  function sprichStart(){
+    if(!basis().fertig){ statusText('SETUP NÖTIG','fehler'); return; }
+    elPtt.classList.add('aktiv');
+    if(navigator.vibrate) navigator.vibrate(12);
+    mikrofonStarten().then(function(){
+      setZustand('listening'); statusText('HÖRT ZU');
+      if(S.wsOk && S.ws && S.ws.readyState === 1){
+        S.ws.send(JSON.stringify({ type:'start', format:'pcm16', rate:16000 }));
+      }
+      var r = S.erkennt || spracherkennungBauen();
+      if(r){ try{ r.start(); }catch(e){} } else { statusText('KEIN SPRACH-API'); }
+    }).catch(function(e){
+      elPtt.classList.remove('aktiv');
+      statusText('MIKRO: ' + (e.message || 'Fehler'), 'fehler');
+      setZustand('error');
+    });
+  }
+  function sprichStope(){
+    elPtt.classList.remove('aktiv');
+    if(navigator.vibrate) navigator.vibrate(8);
+    if(S.wsOk && S.ws && S.ws.readyState === 1){
+      S.ws.send(JSON.stringify({ type:'stop' }));
+    }
+    if(S.erkennt){ try{ S.erkennt.stop(); }catch(e){} }
+    if(S.zustand === 'listening') setZustand('idle');
+    if(S.mic){ S.mic.getTracks().forEach(function(t){ t.stop(); }); S.mic = null; }
+    if(S.audio){ try{ S.audio.close(); }catch(e){} S.audio = null; S.analyser = null; S.worklet = null; }
+  }
+
+  function pegelLesen(){
+    var jetzt = performance.now();
+    if(S.analyser){
+      var daten = new Uint8Array(S.analyser.fftSize);
+      S.analyser.getByteTimeDomainData(daten);
+      var summe = 0;
+      for(var i = 0; i < daten.length; i++){ var d = (daten[i] - 128) / 128; summe += d * d; }
+      var rms = Math.sqrt(summe / daten.length);
+      S.ziel = Math.min(1, rms * 3.4);
+    } else if(jetzt - S.serverPegelZeit < 500){
+      S.ziel = Math.min(1, S.serverPegel * 3.2);
+    } else {
+      S.ziel = S.zustand === 'speaking' ? 0.34 + 0.22 * Math.sin(jetzt / 190) : 0;
+    }
+    S.pegel += (S.ziel - S.pegel) * (S.ziel > S.pegel ? 0.45 : 0.12);
+    return S.pegel;
+  }
+
+  function zeichnen(){
+    if(!S.laeuft) return;
+    var b = elCanvas.width, m = b / 2, pegel = pegelLesen();
+    ctx.clearRect(0, 0, b, b);
+    var ruhig = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var takt = performance.now() / 1000;
+    var farbe = S.zustand === 'speaking' ? '255,95,162' : S.zustand === 'thinking' ? '139,92,246'
+      : S.zustand === 'error' ? '255,84,112' : '67,232,255';
+    var anzahl = 64, grund = m * 0.62;
+    ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for(var i = 0; i < anzahl; i++){
+      var winkel = (i / anzahl) * Math.PI * 2 - Math.PI / 2;
+      var welle = ruhig ? 0.5 : 0.5 + 0.5 * Math.sin(takt * 2.2 + i * 0.42);
+      var laenge = m * (0.05 + 0.3 * pegel * welle);
+      var aussen = grund + laenge, innen = grund - laenge * 0.55;
+      ctx.strokeStyle = 'rgba(' + farbe + ',' + (0.16 + 0.78 * pegel).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.moveTo(m + Math.cos(winkel) * innen, m + Math.sin(winkel) * innen);
+      ctx.lineTo(m + Math.cos(winkel) * aussen, m + Math.sin(winkel) * aussen);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(' + farbe + ',' + (0.1 + 0.35 * pegel).toFixed(3) + ')';
+    ctx.lineWidth = 1.5;
+    ctx.arc(m, m, grund * (1 + 0.06 * pegel), 0, Math.PI * 2);
+    ctx.stroke();
+    elKopf.style.transform = 'scale(' + (1 + 0.05 * pegel).toFixed(3) + ')';
+    var mund = document.getElementById('mund');
+    if(mund){
+      var auf = S.zustand === 'speaking' ? 6 + 16 * pegel : 3 + 5 * pegel;
+      mund.setAttribute('d', 'M100 128 q-10 ' + auf.toFixed(1) + ' -20 ' + (auf * 0.2).toFixed(1)
+        + ' M100 128 q10 ' + auf.toFixed(1) + ' 20 ' + (auf * 0.2).toFixed(1));
+    }
+    var jetzt = performance.now();
+    if(S.zustand !== 'listening' && jetzt > S.blinzelTimer){
+      S.blinzelTimer = jetzt + 2600 + Math.random() * 3200;
+      elKopf.classList.add('blinzeln');
+      setTimeout(function(){ elKopf.classList.remove('blinzeln'); }, 130);
+    }
+    requestAnimationFrame(zeichnen);
+  }
+
+  elPtt.addEventListener('pointerdown', function(ev){ ev.preventDefault(); sprichStart(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(a){
+    elPtt.addEventListener(a, function(ev){ if(elPtt.classList.contains('aktiv')){ ev.preventDefault(); sprichStope(); } });
+  });
+  elModus.addEventListener('click', function(){
+    S.modus = S.modus === 'fast' ? 'deep' : 'fast';
+    elModus.textContent = S.modus.toUpperCase();
+    elModus.classList.toggle('aus', S.modus === 'fast');
+    statusText('MODUS ' + S.modus.toUpperCase());
+  });
+  elZahnrad.addEventListener('click', function(){
+    var b = basis();
+    var u = prompt('Brücken-Adresse (Tunnel-URL):', b.url || '');
+    if(u === null) return;
+    var t = prompt('Brücken-Token:', b.tok || '');
+    if(t === null) return;
+    u = u.trim().replace(/\/+$/,''); t = t.trim();
+    if(!u){ localStorage.removeItem(LS.url); localStorage.removeItem(LS.tok); }
+    else { localStorage.setItem(LS.url, u); localStorage.setItem(LS.tok, t); }
+    statusText('GESPEICHERT','ok');
+    zeigeBereit(); if(basis().fertig) verbinde();
+  });
+
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && basis().fertig && !S.wsOk) verbinde(); });
+  window.addEventListener('beforeunload', function(){ S.laeuft = false; try{ if(S.ws) S.ws.close(); }catch(e){} });
+
+  holeTunnelAdresse();
+  zeigeBereit();
+  if(basis().fertig) verbinde(); else meta('Setup: Brücken-Adresse und Token eintragen.');
+  requestAnimationFrame(zeichnen);
+})();
 </script>
 </body>
 </html>

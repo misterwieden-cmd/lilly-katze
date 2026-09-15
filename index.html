@@ -580,6 +580,22 @@ if(localStorage.getItem('lilly_gkey')) $fab3.classList.add('on');
 /* ---------- Kommandozentrale verbinden (Adresse + Bruecken-Token, bleibt lokal) ---------- */
 const $fab4=document.getElementById('fab4');
 if(localStorage.getItem('lilly_relay') && localStorage.getItem('lilly_relay_tok')) $fab4.classList.add('on');
+/* ---------- Ein-Tap-Verbindung per Link (#relay=...&key=...) ---------- */
+(function(){
+  try{
+    const h=new URLSearchParams(location.hash.slice(1));
+    const rl=h.get('relay'); const tk=h.get('key');
+    if(rl||tk){
+      if(rl) localStorage.setItem('lilly_relay', rl);
+      if(tk) localStorage.setItem('lilly_relay_tok', tk);
+      $fab4.classList.add('on');
+      statusEl.textContent='ZENTRALE VERBUNDEN';
+      setTimeout(()=>{ statusEl.textContent='IDLE'; },3200);
+      history.replaceState(null,'',location.pathname+location.search);
+    }
+  }catch(e){}
+})();
+
 $fab4.onclick=async()=>{
   const curUrl=localStorage.getItem('lilly_relay')||'';
   const curTok=localStorage.getItem('lilly_relay_tok')||'';

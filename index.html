@@ -71,6 +71,7 @@
   <div id="pill"><span id="dot"></span><span id="status">IDLE</span></div>
   <button id="fab" title="Mikrofon-Spiegel">🎙</button>
   <button id="fab2" title="Chat-Modus: rede mit Lilly">💬</button>
+  <button id="fab3" title="KI-Schlüssel (Gemini) – optional">🔑</button>
   <div id="chatlog"></div>
 </div>
 <div id="bar">
@@ -458,25 +459,25 @@ const BRAIN=(()=>{
   return {reply, mem};
 })();
 async function askBrain(text){
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
-  let remote='';
+  // Optionaler Turbo: Gemini mit lokal gespeichertem Key. Ohne Key sofort Offline-Gehirn (keine Wartezeit).
+  const gkey=localStorage.getItem('lilly_gkey')||'';
+  if(!gkey) throw new Error('kein key');
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
   try{
-    const r=await fetch('https://text.pollinations.ai/openai',{
+    const contents=chatHistory.slice(-10).map(m=>({role: m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(gkey),{
       method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
-      body:JSON.stringify({messages:[
-        {role:'system',content:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, maximal 2 kurze Sätze, miaue gelegentlich, sei witzig und herzlich.'},
-        ...chatHistory.slice(-8)
-      ], model:'openai-fast', referrer:'misterwieden-cmd.github.io'})
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, kurz (max 2 Sätzen), charmant und witzig, miaue gelegentlich.'}]},
+        contents, generationConfig:{maxOutputTokens:160, temperature:0.95}
+      })
     });
-    if(!r.ok) throw new Error('http '+r.status);
-    const data=await r.json();
-    remote=(data.choices?.[0]?.message?.content||'').trim();
-  } catch(e){ throw e; }
-  finally { clearTimeout(to); }
-  // Fehlertexte NIE sprechen: nur akzeptieren, wenn es wie eine echte Antwort aussieht
-  if(!remote || remote.length<3) throw new Error('leer');
-  if(/api\s?key|budget|unauthorized|rate\s?limit|subscription|pay-as-you-go|quota|invalid_request|missing\s?authorization|reached\s?its/i.test(remote)) throw new Error('provider-fehler');
-  return remote.slice(0,300);
+    if(!r.ok) throw new Error('gemini '+r.status);
+    const j=await r.json();
+    const t=((j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('')).trim();
+    if(!t || /api key|quota|rate limit|exceeded|permission denied/i.test(t)) throw new Error('gemini leer');
+    return t.slice(0,300);
+  } finally { clearTimeout(to); }
 }
 function startListening(){
   if(!chatMode||!rec) return;
@@ -531,6 +532,24 @@ function stopChat(){
   setState('idle');
 }
 $fab2.onclick=()=>{ chatMode? stopChat() : startChat(); };
+
+/* ---------- Optionaler Turbo: Gemini-Key (bleibt NUR auf diesem Gerät) ---------- */
+const $fab3=document.getElementById('fab3');
+if(localStorage.getItem('lilly_gkey')) $fab3.classList.add('on');
+$fab3.onclick=async()=>{
+  const cur=localStorage.getItem('lilly_gkey')||'';
+  const val=prompt('Optional: Gemini-API-Key einfügen (kostenlos auf aistudio.google.com/apikey).\nLeer + OK = Key löschen. Der Key bleibt nur auf diesem Gerät.\n\nAktuell: '+(cur?cur.slice(0,8)+'…':'kein Key'), cur);
+  if(val===null) return;
+  const k=val.trim();
+  if(!k){ localStorage.removeItem('lilly_gkey'); $fab3.classList.remove('on'); statusEl.textContent='KEY GELÖSCHT'; setTimeout(()=>statusEl.textContent='IDLE',2200); return; }
+  localStorage.setItem('lilly_gkey',k);
+  statusEl.textContent='TESTE KEY...';
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Sag kurz Hallo auf Deutsch.'}]}]})});
+    if(r.ok){ statusEl.textContent='KEY OK!'; $fab3.classList.add('on'); }
+    else { statusEl.textContent='KEY UNGÜLTIG'; setTimeout(()=>statusEl.textContent='IDLE',2600); }
+  }catch(e){ statusEl.textContent='NETZ FEHLER'; setTimeout(()=>statusEl.textContent='IDLE',2600); }
+};
 function micTick(t,dt){
   if(!micMode||!analyser) return;
   analyser.getByteTimeDomainData(micData);

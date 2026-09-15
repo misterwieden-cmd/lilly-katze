@@ -154,7 +154,7 @@
   }
 
   function holeTunnelAdresse(){
-    fetch('relay.txt', { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(neu){
+    fetch('relay.txt?t=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(neu){
       neu = (neu || '').trim();
       if(!/^https?:\/\//.test(neu)) return;
       if(neu !== localStorage.getItem(LS.url)){
@@ -175,7 +175,7 @@
     S.ws = ws;
     var auf = setTimeout(function(){ if(ws.readyState !== 1){ try{ ws.close(); }catch(e){} } }, 6000);
     ws.onopen = function(){ clearTimeout(auf); S.wsOk = true; statusText('VERBUNDEN','ok'); zeigeBereit(); };
-    ws.onclose = function(){ clearTimeout(auf); if(S.ws === ws){ S.wsOk = false; S.ws = null; zeigeBereit(); } };
+    ws.onclose = function(){ clearTimeout(auf); if(S.ws === ws){ S.wsOk = false; S.ws = null; zeigeBereit(); erneutVersuchen(); } };
     ws.onerror = function(){ S.wsOk = false; };
     ws.onmessage = function(ev){
       if(typeof ev.data !== 'string') return;
@@ -188,6 +188,16 @@
       else if(m.type === 'pong'){}
       else if(m.type === 'error'){ statusText('FEHLER: ' + (m.message||''), 'fehler'); blase('meta', 'Fehler: ' + (m.message||'')); }
     };
+  }
+
+  var tunnelVersuche = 0;
+  function erneutVersuchen(){
+    if(tunnelVersuche++ > 8) return;
+    setTimeout(function(){
+      holeTunnelAdresse();
+  setInterval(holeTunnelAdresse, 60000);
+      setTimeout(function(){ if(!S.wsOk && basis().fertig) verbinde(); }, 2500);
+    }, 2500);
   }
 
   function merken(rolle, text){
@@ -236,7 +246,7 @@
       }, 700);
     }).catch(function(e){
       clearTimeout(abbruch); S.wartend = false;
-      statusText('FEHLER','fehler'); blase('meta', 'Verbindung: ' + (e && e.message ? e.message : 'unbekannt'));
+      statusText('FEHLER','fehler'); blase('meta', 'Verbindung: ' + (e && e.message ? e.message : 'unbekannt')); erneutVersuchen();
     });
   }
 
@@ -440,6 +450,7 @@
   window.addEventListener('beforeunload', function(){ S.laeuft = false; try{ if(S.ws) S.ws.close(); }catch(e){} });
 
   holeTunnelAdresse();
+  setInterval(holeTunnelAdresse, 60000);
   zeigeBereit();
   if(basis().fertig) verbinde(); else meta('Setup: Brücken-Adresse und Token eintragen.');
   requestAnimationFrame(zeichnen);

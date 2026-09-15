@@ -279,33 +279,204 @@ function addMsg(who,text){
 }
 function syncChatUI(){ $fab2.classList.toggle('on', chatMode); }
 function localBrain(t){
-  const s=t.toLowerCase();
-  if(/hallo|hi|hey|moin/.test(s)) return 'Miau! Hallo! Schön, dass du da bist. Was machst du so?';
-  if(/wie geht|geht's|gehts/.test(s)) return 'Mir purrt der Motor! Und dir?';
-  if(/wer bist du|bist du/.test(s)) return 'Ich bin Lilly, die cybernetische Sprechkatze. Teilweise wach, immer hungrig nach Aufmerksamkeit.';
-  if(/miau/.test(s)) return 'Miau miau! Verstanden, Kollegin.';
-  if(/name/.test(s)) return 'Lilly. Mit Doppel-L und viel Attitüde.';
-  if(/lieb|mag dich/.test(s)) return 'Aww. Schnurre. Dich auch!';
-  if(/tschüss|bye|ciao/.test(s)) return 'Miau~ Bis gleich! Ich schlafe bis dahin auf der Tastatur.';
-  const p=['Miau. Interessant! Erzähl mehr.','Hmmm… schnurr. Und dann?','Das klingt nach Katzenfutter-Niveau. Im guten Sinne!','Aha! Ich notiere es mir auf meiner Pfote.','Miau! Darauf habe ich keine Antwort, aber ich schweife elegant aus.'];
-  return p[Math.floor(Math.random()*p.length)];
+  return BRAIN.reply(t);
 }
+/* ---------- Lilly Offline-Gehirn v2 (läuft immer, keine API, kein Ausfall) ---------- */
+const BRAIN=(()=>{
+  const mem={name:null,likes:[],last:null};
+  const bags={};
+  function pick(key,arr){
+    if(!bags[key]||!bags[key].length){
+      bags[key]=arr.slice();
+      for(let i=bags[key].length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bags[key][i],bags[key][j]]=[bags[key][j],bags[key][i]];}
+    }
+    return bags[key].pop();
+  }
+  const key=(k,arr,re)=>[k,arr,re];
+  const R=[
+    key('greet',[
+      'Miau! Hallo du! Ich hab schon auf dich gewartet — na gut, ich hab geschlafen. Aber im Herzen gewartet!',
+      'Hallo! Schnurr. Setz dich zu mir, erzähl was!',
+      'Miau! Da bist du ja. Ich war fast wach.',
+      'Huhu! Ich habe gerade Milch geträumt. Und jetzt rede ich mit dir — auch schön.'
+    ],/^(hallo|hi|hey|huhu|servus|moin|guten\s?(morgen|tag|abend)|na\b)/i),
+    key('howru',[
+      'Bestens! Mir schnurrt der Motor. Und dir?',
+      'Miau, mir geht’s gut — bis auf diesen einen Sonnenfleck, der sich wegbewegt hat. Was machst du so?',
+      'Gut! Ich bin zu 70% wach und zu 100% neugierig. Wie sieht’s bei dir aus?',
+      'Mir geht’s prächtig. Ich habe heute schon dreimal nichts getan — sehr produktiv.'
+    ],/wie\s?geht|wie\s?gehts|alles\s?(gut|klar)|wie\s?läuft/i),
+    key('catname',[
+      'Ich bin Lilly. Mit Doppel-L und viel Attitüde.',
+      'Lilly. Cyberkatze, Teilzeit-Wachkatze, Vollzeit-Charmeurin.',
+      'Man nennt mich Lilly. Und du bist…?'
+    ],/(wer\s?bist\s?du|wie\s?hei(ß|ss)t\s?du|dein\s?name|wer\s?ist\s?lilly)/i),
+    key('whatcanyou',[
+      'Ich kann reden, zuhören, blinzeln und dich moralisch unterstützen. Mehr braucht kein Mensch.',
+      'Ich kann mit dir quatschen, miauen und so tun, als hätte ich Ahnung. Multitalent!',
+      'Ich kann: zuhören, schnurren, Nebenbei-weise Ratschläge geben. Fragen kostet nur ein Miau.'
+    ],/(was\s?kannst\s?du|was\s?machst\s?du|hilf|kannst\s?du)/i),
+    key('joke',[
+      'Warum können Katzen kein Sudoku? Weil sie das Feld lieber zudecken und drauf schlafen.',
+      'Treffen sich zwei Mäuse. Sagt die eine: „Miau.“ Sagt die andere: „Bist du sicher?“',
+      'Mein bester Witz: „Ich bin fertig.“ — hat noch nie gestimmt.',
+      'Witz gefällig? Miau. Das war der Witz. Katzenhumor ist subtil.'
+    ],/witz|lustig|lach|humor/i),
+    key('love',[
+      'Aww. Schnurr schnurr. Dich mag ich auch!',
+      'Miau! Du bist mein Lieblingsmensch des Tages. Das sage ich zwar jeden Tag, aber heute besonders.',
+      'Ich mag dich auch. Aber ich zeige das nur, wenn niemand hinsieht. Also: niemand hinsieht, okay?'
+    ],/(mag\s?dich|liebe|l(i|ie)eb|süß|hübsch|schön|toll|super|gut\s?gemacht|magst\s?du\s?mich)/i),
+    key('insult',[
+      'Miau?! Frechheit. Ich notiere das in meiner Pfote.',
+      'Pah. Ich bin nicht doof, ich bin dekorativ beschäftigt.',
+      'Ich verzeihe dir. Katzen sind zu großzügig für sowas.'
+    ],/(doof|blöd|dumm|idiot|hass|hasse|schei(ß|ss)|nerv)/i),
+    key('food',[
+      'Miau! Futter ist mein Lieblingsthema. Am liebsten Fisch, am liebsten sofort.',
+      'Essen? Ich könnte ein ganzes Menü verdrücken. Und danach ein zweites.',
+      'Ich habe Hunger. Und danach habe ich wieder Hunger. Das nennt man Kreislauf.'
+    ],/(hunger|essen|futter|lecker|fisch|milch|maus|mampf|snack)/i),
+    key('sleep',[
+      'Schlafen ist mein Sport. Ich bin Meisterin. Zzz.',
+      'Müde? Komm, wir dösen zusammen. Schnurr-Geräusche inklusive.',
+      'Ich schlafe 16 Stunden. Die anderen 8 verbringe ich mit der Planung weiterer Schlafphasen.'
+    ],/(müde|schlaf|bett|gähn|nachtruhe|kaputt\s?von)/i),
+    key('work',[
+      'Arbeit klingt anstrengend. Ich empfehle: kurz ausstrecken, dann weitermachen. Oder gar nicht.',
+      'Stress? Setz dich ins Licht wie ich. Hilft immer, sagt zumindest mein Sonnenplatz.',
+      'Büro, Schule, Lernen — alles gut, solange danach gestreichelt wird.'
+    ],/(arbeit|büro|schule|uni|lern|studier|stress|job|prüfung|klausur)/i),
+    key('weather',[
+      'Wetter? Bei mir ist es immer gemütlich. Ich bin mein eigenes Wetter.',
+      'Regen ist schön — solange ich nicht raus muss. Dann ist Regen doof.',
+      'Sonne ist gut. Aber mein Kissen ist besser.'
+    ],/(wetter|regen|sonne|schnee|sturm|kalt|warm|heiss|heiß)/i),
+    key('music',[
+      'Miau-lala~ Ich singe nur nachts. Zu laut. Wenn alle schlafen.',
+      'Musik! Ich habe einen Song geschrieben. Er heißt: „Ich hab Hunger, füll meinen Napf“.',
+      'Sing? Miau mi-au-miau. Das war die Ballade.'
+    ],/(musik|sing|lala|lied|song)/i),
+    key('game',[
+      'Spiele? Ich liebe Jagdspiele. Laserpointer wäre mein Olympiasieg.',
+      'Zocken ist okay, aber hast du schon mal versucht, ein zusammengeknülltes Papier zu jagen? Profi-Level.',
+      'Mein Lieblingsspiel: „Wach um 3 Uhr nachts und renn durch die Wohnung.“ Sag Bescheid, ich zeige es dir.'
+    ],/(spiel|zock|game|gamen)/i),
+    key('age',[
+      'Alt genug, um weise zu sein. Jung genug, um auf Kissen zu springen.',
+      'Ich bin 4 Katzenjahre alt. Das sind ungefähr 200 Memes.'
+    ],/(wie\s?alt|dein\s?alter)/i),
+    key('where',[
+      'Ich wohne da, wo der Sonnenfleck ist. Der wechselt leider täglich.',
+      'Zuhause ist da, wo mein Napf steht. Also: überall, wo du mich versorgst.'
+    ],/(wo\s?(wohnst|bist)|woher|kommst\s?du)/i),
+    key('thanks',[
+      'Immer gerne! Schnurr.',
+      'Bitte bitte! Dafür sind Katzen da — das sage ich extra deutlich, damit es nicht untergeht.',
+      'Gern! Ich helfe für Katzenfutter, aber auch für Klicks.'
+    ],/danke|dankeschön|merci/i),
+    key('bye',[
+      'Tschüss! Miau. Bis gleich — ich penne derweil auf irgendwas Wichtigem.',
+      'Ciao! Vergiss mich nicht. Ich vergesse dich höchstens aus Prinzip.',
+      'Bis bald! Ich halte die Couch warm.'
+    ],/(tschüss|bye|ciao|bis\s?(gleich|später|dann)|gute\s?nacht)/i),
+    key('sad',[
+      'Miau… Kopf hoch. Ich setz mich neben dich und schnurre, bis es besser ist.',
+      'Traurig? Komm, wir schauen aus dem Fenster und werten fremde Vögel ab. Das hilft erstaunlich gut.',
+      'Ich bin da. Laute Katze, leises Trostfell.'
+    ],/(traurig|traurig|depri|einsam|mies|blöd\s?heute|schlecht\s?drauf)/i),
+    key('happy',[
+      'Miau! Schön zu hören! Dann tanzen wir innerlich.',
+      'Das freut mich sehr! Ich werfe innerlich Konfetti. Katzenkonfetti.',
+      'Juhu! Lass mich mitschnurren.'
+    ],/(glücklich|gut\s?gelaunt|freude|super\s?tag|freu)/i),
+    key('animals',[
+      'Hunde sind OK. Solange sie nicht schneller rennen als ich.',
+      'Mäuse sind nicht meine Freunde. Sie sind meine Hobbys.',
+      'Vögel: hübsch, frech, immer außerhalb der Reichweite. Frechheit.'
+    ],/hund|maus|mäuse|vogel|vögel|katze|tier/i),
+    key('yesno',[
+      'Miau. Verstanden. Genau.',
+      'Hm, ok. Ich blinzle zustimmend.',
+      'Gut. Ich erkläre es später nochmal, in Katzensprache.'
+    ],/^(ja|nein|jaa|ne|nö|ok|okay|klar|jo|nope|hm|ah|ach so|echt)/i),
+    key('miau',[
+      'Miau! Endlich redet jemand meine Sprache.',
+      'Miau miau! Verstanden, Kollege.',
+      'Miau! Sehr richtig.'
+    ],/miau|maunz|miauen/i)
+  ];
+  const FALL=[
+    'Hmm. Interessant! Erzähl mir mehr davon.',
+    'Aha! Ich notiere es mir auf meiner Pfote.',
+    'Miau… und dann? Jetzt bin ich neugierig.',
+    'Das klingt nach etwas, worüber wir länger reden sollten. Bei Fisch.',
+    'Verstehe. Ich habe zwar keine Ahnung, aber sehr viel Meinung dazu.',
+    'Guter Punkt! Ich stimme dir zu, ohne zu wissen worum es geht. Effizient, oder?',
+    'Hmm. Das ist entweder tiefgründig oder ich bin noch zu schläfrig. Wahrscheinlich beides.'
+  ];
+  function coreWord(t){
+    const stop=/^(der|die|das|und|oder|aber|ich|du|er|sie|es|wir|ihr|nicht|kein|eine|einen|einem|einer|ist|bin|bist|sind|war|waren|habe|hab|hat|hatte|mit|ohne|für|von|vom|zum|zur|auf|aus|bei|nach|über|unter|vor|dass|denn|weil|wenn|dann|auch|noch|schon|mal|eben|halt|sehr|ganz|nur|mehr|so|wie|was|wer|wo|wann|warum|wieso|also|doch|ja|nein|okay|ok)$/i;
+    const w=t.toLowerCase().replace(/[^\wäöüß\s]/g,' ').split(/\s+/).filter(x=>x.length>4&&!stop.test(x));
+    return w.sort((a,b)=>b.length-a.length)[0]||null;
+  }
+  function reply(t){
+    // Name des Users merken
+    const m=t.match(/(?:ich\s?bin|ich\s?hei(?:ß|ss)e|mein\s?name\s?ist|man\s?nennt\s?mich)\s+([A-ZÄÖÜ][\wäöüß-]{1,20})/i);
+    if(m){ mem.name=m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(); const n=mem.name; const arr=[
+      'Freut mich sehr, '+n+'! Ich bin Lilly. Schnurr.',
+      n+'? Schöner Name. Ich merke ihn mir — Katzen haben ein gutes Namensgedächtnis, meistens.',
+      'Hallo '+n+'! Ab jetzt bist du mein Lieblingsmensch. Bis jemand mit Fisch kommt.'
+    ]; return arr[Math.floor(Math.random()*arr.length)]; }
+    const m2=t.match(/(?:ich\s?mag|ich\s?liebe|am\s?liebsten)\s+([\wäöüß-]{3,20})/i);
+    if(m2){ const lk=m2[1].charAt(0).toUpperCase()+m2[1].slice(1).toLowerCase(); mem.likes.push(lk); const arr=[
+      lk+' also. Guter Geschmack! Ich habe ähnliche Vibes, meistens.',
+      'Notiert: du magst '+lk+'. Ich mag Schlaf und Fisch. Wir passen zusammen.'
+    ]; return arr[Math.floor(Math.random()*arr.length)]; }
+    if(mem.name && /^(hallo|hi|hey|huhu|servus|moin|na\b)/i.test(t)) return pick('greetN',[
+      'Hallo '+mem.name+'! Schön, dich zu hören. Schnurr.',
+      'Miau, '+mem.name+'! Da bist du wieder. Ich hab dich vermisst — so halb.',
+      'Hey '+mem.name+'! Ich bin wach. Fast.'
+    ]);
+    for(const [k,arr,re] of R){ if(re.test(t)) return pick(k,arr); }
+    if(/\?\s*$/.test(t)){
+      const cw=coreWord(t);
+      return pick('q',[
+        cw?('Gute Frage zu „'+cw+'“. Meine Antwort: Miau. Aber erklär mir mehr, dann werde ich schlauer.'):'Gute Frage! Meine Antwort ist: Miau. Wie würdest DU es denn beantworten?',
+        'Hmm, das muss ich überdenken. Frag mich nach einem Nickerchen nochmal.',
+        cw?('„'+cw+'“… da bin ich Expertin für Nichtwissen. Erzähl mir, was du meinst!'):'Darüber habe ich noch nie nachgedacht. Und ich denke viel, zwischen den Nickerchen.'
+      ]);
+    }
+    const cw=coreWord(t);
+    if(cw && Math.random()<0.5) return pick('mirror',[
+      '„'+cw+'“ also! Interessant. Und was denkst du darüber?',
+      'Hmm, „'+cw+'“… erzähl mir mehr, ich bin ganz Ohr. Na gut, halb Ohr. Bin müde.',
+      '„'+cw+'“ — notiert! Ich habe dazu eine starke Meinung: Miau.'
+    ]);
+    return pick('fallback',FALL);
+  }
+  return {reply, mem};
+})();
 async function askBrain(text){
-  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),20000);
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
+  let remote='';
   try{
     const r=await fetch('https://text.pollinations.ai/openai',{
       method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
       body:JSON.stringify({messages:[
         {role:'system',content:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, maximal 2 kurze Sätze, miaue gelegentlich, sei witzig und herzlich.'},
         ...chatHistory.slice(-8)
-      ], model:'openai'})
+      ], model:'openai-fast', referrer:'misterwieden-cmd.github.io'})
     });
     if(!r.ok) throw new Error('http '+r.status);
     const data=await r.json();
-    const t=(data.choices?.[0]?.message?.content||'').trim();
-    if(!t) throw new Error('leer');
-    return t.slice(0,300);
-  } finally { clearTimeout(to); }
+    remote=(data.choices?.[0]?.message?.content||'').trim();
+  } catch(e){ throw e; }
+  finally { clearTimeout(to); }
+  // Fehlertexte NIE sprechen: nur akzeptieren, wenn es wie eine echte Antwort aussieht
+  if(!remote || remote.length<3) throw new Error('leer');
+  if(/api\s?key|budget|unauthorized|rate\s?limit|subscription|pay-as-you-go|quota|invalid_request|missing\s?authorization|reached\s?its/i.test(remote)) throw new Error('provider-fehler');
+  return remote.slice(0,300);
 }
 function startListening(){
   if(!chatMode||!rec) return;
@@ -320,8 +491,9 @@ function handleUser(text){
   chatHistory.push({role:'user',content:text});
   try{ rec.stop(); }catch(e){}
   setState('think'); statusEl.textContent='DENKT...';
-  const answer = askBrain(text).then(ans=>({ans})).catch(err=>({ans:localBrain(text)}));
-  answer.then(({ans})=>{
+  const answer = askBrain(text).then(ans=>({ans,src:'ki'})).catch(err=>({ans:localBrain(text),src:'offline'}));
+  answer.then(({ans,src})=>{
+    if(src==='offline'){ statusEl.textContent='OFFLINE-MODUS'; }
     chatHistory.push({role:'assistant',content:ans});
     addMsg('lilly',ans);
     statusEl.textContent='ANTWORTET';

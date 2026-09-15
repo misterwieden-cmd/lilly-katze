@@ -107,6 +107,7 @@
 <div id="steuer">
   <button class="knopf" id="modus" title="Modus umschalten">FAST</button>
   <button id="ptt" disabled>HALTEN &amp; SPRECHEN</button>
+  <button class="knopf" id="hud" title="Dashboard der Kommandobasis">HUD</button>
   <button class="knopf" id="zahnrad" title="Einstellungen">SETUP</button>
 </div>
 
@@ -416,6 +417,12 @@
     elModus.classList.toggle('aus', S.modus === 'fast');
     statusText('MODUS ' + S.modus.toUpperCase());
   });
+  var elHud = $('hud');
+  if(elHud){ elHud.addEventListener('click', function(){
+    var b = basis();
+    if(!b.fertig){ statusText('SETUP NOETIG','fehler'); return; }
+    window.open(b.url + '/dashboard', '_blank');
+  }); }
   elZahnrad.addEventListener('click', function(){
     var b = basis();
     var u = prompt('Brücken-Adresse (Tunnel-URL):', b.url || '');

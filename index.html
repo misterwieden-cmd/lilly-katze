@@ -43,6 +43,13 @@
     transition:transform .12s, box-shadow .2s, border-color .2s}
   #fab2:active{transform:scale(.92)}
   #fab2.on{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,.6);background:rgba(20,40,25,.9)}
+  #fab3,#fab4{position:fixed;right:14px;z-index:30;width:58px;height:58px;border-radius:50%;
+    border:2px solid rgba(148,163,184,.6);background:rgba(10,16,30,.85);font-size:24px;
+    line-height:1;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.5);transition:transform .12s, border-color .2s}
+  #fab3{top:198px}
+  #fab4{top:268px}
+  #fab3:active,#fab4:active{transform:scale(.92)}
+  #fab3.on,#fab4.on{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,.6);background:rgba(20,40,25,.9)}
   #chatlog{position:fixed;top:196px;left:12px;right:88px;z-index:25;pointer-events:none;
     display:flex;flex-direction:column;gap:6px;font-size:13px}
   #chatlog div{padding:7px 11px;border-radius:12px;max-width:85%;line-height:1.35;
@@ -71,7 +78,8 @@
   <div id="pill"><span id="dot"></span><span id="status">IDLE</span></div>
   <button id="fab" title="Mikrofon-Spiegel">🎙</button>
   <button id="fab2" title="Chat-Modus: rede mit Lilly">💬</button>
-  <button id="fab3" title="KI-Schlüssel (Gemini) – optional">🔑</button>
+  <button id="fab3" title="KI-Schlüssel (Gemini) - optional">🔑</button>
+  <button id="fab4" title="Kommandozentrale verbinden">🎛️</button>
   <div id="chatlog"></div>
 </div>
 <div id="bar">
@@ -215,7 +223,7 @@ $text.addEventListener('keydown',e=>{ if(e.key==='Enter') speak($text.value); })
 cv.addEventListener('click',()=>{
   if(state!=='idle') return;
   const lines=["Miau! Klick mich nicht, frag mich!","Ja? Ich höre zu.","Miau miau. Übersetzt: Hallo!",
-    "Ich bin einsatzbereit. Also… fast. Katzen sind nie ganz wach."];
+    "Ich bin einsatzbereit. Also... fast. Katzen sind nie ganz wach."];
   speak(lines[Math.floor(Math.random()*lines.length)]);
 });
 
@@ -226,7 +234,7 @@ const $fab=document.getElementById('fab');
 function syncMicUI(){
   if(micMode){
     $btnMic.style.borderColor='#22c55e'; $btnMic.style.color='#dcfce7';
-    $btnMic.textContent='🎙 Hört zu – aus';
+    $btnMic.textContent='🎙 Hört zu - aus';
     $fab.classList.add('on');
   } else {
     $btnMic.style.borderColor=''; $btnMic.style.color='';
@@ -296,21 +304,21 @@ const BRAIN=(()=>{
   const key=(k,arr,re)=>[k,arr,re];
   const R=[
     key('greet',[
-      'Miau! Hallo du! Ich hab schon auf dich gewartet — na gut, ich hab geschlafen. Aber im Herzen gewartet!',
+      'Miau! Hallo du! Ich hab schon auf dich gewartet - na gut, ich hab geschlafen. Aber im Herzen gewartet!',
       'Hallo! Schnurr. Setz dich zu mir, erzähl was!',
       'Miau! Da bist du ja. Ich war fast wach.',
-      'Huhu! Ich habe gerade Milch geträumt. Und jetzt rede ich mit dir — auch schön.'
+      'Huhu! Ich habe gerade Milch geträumt. Und jetzt rede ich mit dir - auch schön.'
     ],/^(hallo|hi|hey|huhu|servus|moin|guten\s?(morgen|tag|abend)|na\b)/i),
     key('howru',[
       'Bestens! Mir schnurrt der Motor. Und dir?',
-      'Miau, mir geht’s gut — bis auf diesen einen Sonnenfleck, der sich wegbewegt hat. Was machst du so?',
+      'Miau, mir geht’s gut - bis auf diesen einen Sonnenfleck, der sich wegbewegt hat. Was machst du so?',
       'Gut! Ich bin zu 70% wach und zu 100% neugierig. Wie sieht’s bei dir aus?',
-      'Mir geht’s prächtig. Ich habe heute schon dreimal nichts getan — sehr produktiv.'
+      'Mir geht’s prächtig. Ich habe heute schon dreimal nichts getan - sehr produktiv.'
     ],/wie\s?geht|wie\s?gehts|alles\s?(gut|klar)|wie\s?läuft/i),
     key('catname',[
       'Ich bin Lilly. Mit Doppel-L und viel Attitüde.',
       'Lilly. Cyberkatze, Teilzeit-Wachkatze, Vollzeit-Charmeurin.',
-      'Man nennt mich Lilly. Und du bist…?'
+      'Man nennt mich Lilly. Und du bist...?'
     ],/(wer\s?bist\s?du|wie\s?hei(ß|ss)t\s?du|dein\s?name|wer\s?ist\s?lilly)/i),
     key('whatcanyou',[
       'Ich kann reden, zuhören, blinzeln und dich moralisch unterstützen. Mehr braucht kein Mensch.',
@@ -319,8 +327,8 @@ const BRAIN=(()=>{
     ],/(was\s?kannst\s?du|was\s?machst\s?du|hilf|kannst\s?du)/i),
     key('joke',[
       'Warum können Katzen kein Sudoku? Weil sie das Feld lieber zudecken und drauf schlafen.',
-      'Treffen sich zwei Mäuse. Sagt die eine: „Miau.“ Sagt die andere: „Bist du sicher?“',
-      'Mein bester Witz: „Ich bin fertig.“ — hat noch nie gestimmt.',
+      'Treffen sich zwei Mäuse. Sagt die eine: "Miau." Sagt die andere: "Bist du sicher?"',
+      'Mein bester Witz: "Ich bin fertig." - hat noch nie gestimmt.',
       'Witz gefällig? Miau. Das war der Witz. Katzenhumor ist subtil.'
     ],/witz|lustig|lach|humor/i),
     key('love',[
@@ -346,22 +354,22 @@ const BRAIN=(()=>{
     key('work',[
       'Arbeit klingt anstrengend. Ich empfehle: kurz ausstrecken, dann weitermachen. Oder gar nicht.',
       'Stress? Setz dich ins Licht wie ich. Hilft immer, sagt zumindest mein Sonnenplatz.',
-      'Büro, Schule, Lernen — alles gut, solange danach gestreichelt wird.'
+      'Büro, Schule, Lernen - alles gut, solange danach gestreichelt wird.'
     ],/(arbeit|büro|schule|uni|lern|studier|stress|job|prüfung|klausur)/i),
     key('weather',[
       'Wetter? Bei mir ist es immer gemütlich. Ich bin mein eigenes Wetter.',
-      'Regen ist schön — solange ich nicht raus muss. Dann ist Regen doof.',
+      'Regen ist schön - solange ich nicht raus muss. Dann ist Regen doof.',
       'Sonne ist gut. Aber mein Kissen ist besser.'
     ],/(wetter|regen|sonne|schnee|sturm|kalt|warm|heiss|heiß)/i),
     key('music',[
       'Miau-lala~ Ich singe nur nachts. Zu laut. Wenn alle schlafen.',
-      'Musik! Ich habe einen Song geschrieben. Er heißt: „Ich hab Hunger, füll meinen Napf“.',
+      'Musik! Ich habe einen Song geschrieben. Er heißt: "Ich hab Hunger, füll meinen Napf".',
       'Sing? Miau mi-au-miau. Das war die Ballade.'
     ],/(musik|sing|lala|lied|song)/i),
     key('game',[
       'Spiele? Ich liebe Jagdspiele. Laserpointer wäre mein Olympiasieg.',
       'Zocken ist okay, aber hast du schon mal versucht, ein zusammengeknülltes Papier zu jagen? Profi-Level.',
-      'Mein Lieblingsspiel: „Wach um 3 Uhr nachts und renn durch die Wohnung.“ Sag Bescheid, ich zeige es dir.'
+      'Mein Lieblingsspiel: "Wach um 3 Uhr nachts und renn durch die Wohnung." Sag Bescheid, ich zeige es dir.'
     ],/(spiel|zock|game|gamen)/i),
     key('age',[
       'Alt genug, um weise zu sein. Jung genug, um auf Kissen zu springen.',
@@ -373,16 +381,16 @@ const BRAIN=(()=>{
     ],/(wo\s?(wohnst|bist)|woher|kommst\s?du)/i),
     key('thanks',[
       'Immer gerne! Schnurr.',
-      'Bitte bitte! Dafür sind Katzen da — das sage ich extra deutlich, damit es nicht untergeht.',
+      'Bitte bitte! Dafür sind Katzen da - das sage ich extra deutlich, damit es nicht untergeht.',
       'Gern! Ich helfe für Katzenfutter, aber auch für Klicks.'
     ],/danke|dankeschön|merci/i),
     key('bye',[
-      'Tschüss! Miau. Bis gleich — ich penne derweil auf irgendwas Wichtigem.',
+      'Tschüss! Miau. Bis gleich - ich penne derweil auf irgendwas Wichtigem.',
       'Ciao! Vergiss mich nicht. Ich vergesse dich höchstens aus Prinzip.',
       'Bis bald! Ich halte die Couch warm.'
     ],/(tschüss|bye|ciao|bis\s?(gleich|später|dann)|gute\s?nacht)/i),
     key('sad',[
-      'Miau… Kopf hoch. Ich setz mich neben dich und schnurre, bis es besser ist.',
+      'Miau... Kopf hoch. Ich setz mich neben dich und schnurre, bis es besser ist.',
       'Traurig? Komm, wir schauen aus dem Fenster und werten fremde Vögel ab. Das hilft erstaunlich gut.',
       'Ich bin da. Laute Katze, leises Trostfell.'
     ],/(traurig|traurig|depri|einsam|mies|blöd\s?heute|schlecht\s?drauf)/i),
@@ -410,7 +418,7 @@ const BRAIN=(()=>{
   const FALL=[
     'Hmm. Interessant! Erzähl mir mehr davon.',
     'Aha! Ich notiere es mir auf meiner Pfote.',
-    'Miau… und dann? Jetzt bin ich neugierig.',
+    'Miau... und dann? Jetzt bin ich neugierig.',
     'Das klingt nach etwas, worüber wir länger reden sollten. Bei Fisch.',
     'Verstehe. Ich habe zwar keine Ahnung, aber sehr viel Meinung dazu.',
     'Guter Punkt! Ich stimme dir zu, ohne zu wissen worum es geht. Effizient, oder?',
@@ -426,7 +434,7 @@ const BRAIN=(()=>{
     const m=t.match(/(?:ich\s?bin|ich\s?hei(?:ß|ss)e|mein\s?name\s?ist|man\s?nennt\s?mich)\s+([A-ZÄÖÜ][\wäöüß-]{1,20})/i);
     if(m){ mem.name=m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase(); const n=mem.name; const arr=[
       'Freut mich sehr, '+n+'! Ich bin Lilly. Schnurr.',
-      n+'? Schöner Name. Ich merke ihn mir — Katzen haben ein gutes Namensgedächtnis, meistens.',
+      n+'? Schöner Name. Ich merke ihn mir - Katzen haben ein gutes Namensgedächtnis, meistens.',
       'Hallo '+n+'! Ab jetzt bist du mein Lieblingsmensch. Bis jemand mit Fisch kommt.'
     ]; return arr[Math.floor(Math.random()*arr.length)]; }
     const m2=t.match(/(?:ich\s?mag|ich\s?liebe|am\s?liebsten)\s+([\wäöüß-]{3,20})/i);
@@ -436,36 +444,57 @@ const BRAIN=(()=>{
     ]; return arr[Math.floor(Math.random()*arr.length)]; }
     if(mem.name && /^(hallo|hi|hey|huhu|servus|moin|na\b)/i.test(t)) return pick('greetN',[
       'Hallo '+mem.name+'! Schön, dich zu hören. Schnurr.',
-      'Miau, '+mem.name+'! Da bist du wieder. Ich hab dich vermisst — so halb.',
+      'Miau, '+mem.name+'! Da bist du wieder. Ich hab dich vermisst - so halb.',
       'Hey '+mem.name+'! Ich bin wach. Fast.'
     ]);
     for(const [k,arr,re] of R){ if(re.test(t)) return pick(k,arr); }
     if(/\?\s*$/.test(t)){
       const cw=coreWord(t);
       return pick('q',[
-        cw?('Gute Frage zu „'+cw+'“. Meine Antwort: Miau. Aber erklär mir mehr, dann werde ich schlauer.'):'Gute Frage! Meine Antwort ist: Miau. Wie würdest DU es denn beantworten?',
+        cw?('Gute Frage zu "'+cw+'". Meine Antwort: Miau. Aber erklär mir mehr, dann werde ich schlauer.'):'Gute Frage! Meine Antwort ist: Miau. Wie würdest DU es denn beantworten?',
         'Hmm, das muss ich überdenken. Frag mich nach einem Nickerchen nochmal.',
-        cw?('„'+cw+'“… da bin ich Expertin für Nichtwissen. Erzähl mir, was du meinst!'):'Darüber habe ich noch nie nachgedacht. Und ich denke viel, zwischen den Nickerchen.'
+        cw?('"'+cw+'"... da bin ich Expertin für Nichtwissen. Erzähl mir, was du meinst!'):'Darüber habe ich noch nie nachgedacht. Und ich denke viel, zwischen den Nickerchen.'
       ]);
     }
     const cw=coreWord(t);
     if(cw && Math.random()<0.5) return pick('mirror',[
-      '„'+cw+'“ also! Interessant. Und was denkst du darüber?',
-      'Hmm, „'+cw+'“… erzähl mir mehr, ich bin ganz Ohr. Na gut, halb Ohr. Bin müde.',
-      '„'+cw+'“ — notiert! Ich habe dazu eine starke Meinung: Miau.'
+      '"'+cw+'" also! Interessant. Und was denkst du darüber?',
+      'Hmm, "'+cw+'"... erzähl mir mehr, ich bin ganz Ohr. Na gut, halb Ohr. Bin müde.',
+      '"'+cw+'" - notiert! Ich habe dazu eine starke Meinung: Miau.'
     ]);
     return pick('fallback',FALL);
   }
   return {reply, mem};
 })();
+async function askRelay(text){
+  const url=(localStorage.getItem('lilly_relay')||'').replace(/\/+$/,'');
+  const tok=(localStorage.getItem('lilly_relay_tok')||'').trim();
+  if(!url||!tok) throw new Error('keine bruecke');
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),30000);
+  try{
+    const r=await fetch(url+'/cat',{method:'POST',signal:ctrl.signal,
+      headers:{'Content-Type':'application/json','X-Cat-Token':tok},
+      body:JSON.stringify({text, history:chatHistory.slice(-6)})});
+    if(!r.ok) throw new Error('bruecke '+r.status);
+    const j=await r.json();
+    const t=(j.reply||'').trim();
+    if(!t || /api key|budget|unauthorized|forbidden|quota|403/i.test(t)) throw new Error('bruecke leer');
+    return t.slice(0,400);
+  } finally { clearTimeout(to); }
+}
 async function askBrain(text){
+  try{ return {ans: await askRelay(text), src:'zentrale'}; }catch(e){}
+  try{ return {ans: await askGemini(text), src:'ki'}; }catch(e){}
+  return {ans: localBrain(text), src:'offline'};
+}
+async function askGemini(text){
   // Optionaler Turbo: Gemini mit lokal gespeichertem Key. Ohne Key sofort Offline-Gehirn (keine Wartezeit).
   const gkey=localStorage.getItem('lilly_gkey')||'';
   if(!gkey) throw new Error('kein key');
   const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
   try{
     const contents=chatHistory.slice(-10).map(m=>({role: m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(gkey),{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(gkey),{
       method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
       body:JSON.stringify({
         systemInstruction:{parts:[{text:'Du bist Lilly, eine freche, liebenswerte cyberpatische Sprechkatze. Antworte IMMER auf Deutsch, kurz (max 2 Sätzen), charmant und witzig, miaue gelegentlich.'}]},
@@ -487,19 +516,18 @@ function startListening(){
   if(!chatMode||!rec||chatBusy||recActive) return;
   try{ rec.start(); }catch(e){}
 }
-function handleUser(text){
+async function handleUser(text){
   chatBusy=true; addMsg('du',text);
   chatHistory.push({role:'user',content:text});
   try{ rec.stop(); }catch(e){}
   setState('think'); statusEl.textContent='DENKT...';
-  const answer = askBrain(text).then(ans=>({ans,src:'ki'})).catch(err=>({ans:localBrain(text),src:'offline'}));
-  answer.then(({ans,src})=>{
-    if(src==='offline'){ statusEl.textContent='OFFLINE-MODUS'; }
-    chatHistory.push({role:'assistant',content:ans});
-    addMsg('lilly',ans);
-    statusEl.textContent='ANTWORTET';
-    speak(ans, ()=>{ chatBusy=false; if(chatMode) setTimeout(startListening, 900); });
-  });
+  const {ans,src} = await askBrain(text);
+  if(src==='offline') statusEl.textContent='OFFLINE-MODUS';
+  else if(src==='zentrale') statusEl.textContent='KOMMANDOZENTRALE';
+  chatHistory.push({role:'assistant',content:ans});
+  addMsg('lilly',ans);
+  statusEl.textContent='ANTWORTET';
+  speak(ans, ()=>{ chatBusy=false; if(chatMode) setTimeout(startListening, 900); });
 }
 function startChat(){
   if(!SR){ statusEl.textContent='SPRACHERKENNUNG NUR IN CHROME'; setTimeout(()=>statusEl.textContent='IDLE',3000); return; }
@@ -536,16 +564,41 @@ $fab2.onclick=()=>{ chatMode? stopChat() : startChat(); };
 /* ---------- Optionaler Turbo: Gemini-Key (bleibt NUR auf diesem Gerät) ---------- */
 const $fab3=document.getElementById('fab3');
 if(localStorage.getItem('lilly_gkey')) $fab3.classList.add('on');
+
+/* ---------- Kommandozentrale verbinden (Adresse + Bruecken-Token, bleibt lokal) ---------- */
+const $fab4=document.getElementById('fab4');
+if(localStorage.getItem('lilly_relay') && localStorage.getItem('lilly_relay_tok')) $fab4.classList.add('on');
+$fab4.onclick=async()=>{
+  const curUrl=localStorage.getItem('lilly_relay')||'';
+  const curTok=localStorage.getItem('lilly_relay_tok')||'';
+  const url=prompt('Adresse der Brücke (Kommandozentrale), z.B. http://192.168.2.53:8778\nLeer + OK = Verbindung löschen.\n\nAktuell: '+(curUrl||'keine'), curUrl);
+  if(url===null) return;
+  if(!url.trim()){ localStorage.removeItem('lilly_relay'); localStorage.removeItem('lilly_relay_tok'); $fab4.classList.remove('on'); statusEl.textContent='BRÜCKE GELÖSCHT'; setTimeout(()=>statusEl.textContent='IDLE',2200); return; }
+  const tok=prompt('Brücken-Token (steht in relay_token.txt auf dem PC):', curTok);
+  if(tok===null) return;
+  localStorage.setItem('lilly_relay', url.trim());
+  localStorage.setItem('lilly_relay_tok', tok.trim());
+  statusEl.textContent='TESTE BRÜCKE...';
+  try{
+    const r=await fetch(url.trim().replace(/\/+$/,'')+'/ping',{cache:'no-store'});
+    const j=await r.json();
+    if(j && j.ok){ statusEl.textContent='BRÜCKE OK!'; $fab4.classList.add('on'); }
+    else { statusEl.textContent='BRÜCKE UNKLAR'; }
+  }catch(e){ statusEl.textContent='NICHT ERREICHBAR'; }
+  setTimeout(()=>{ if(/BRÜCKE|ERREICHBAR/.test(statusEl.textContent)) statusEl.textContent='IDLE'; },3200);
+};
 $fab3.onclick=async()=>{
   const cur=localStorage.getItem('lilly_gkey')||'';
-  const val=prompt('Optional: Gemini-API-Key einfügen (kostenlos auf aistudio.google.com/apikey).\nLeer + OK = Key löschen. Der Key bleibt nur auf diesem Gerät.\n\nAktuell: '+(cur?cur.slice(0,8)+'…':'kein Key'), cur);
+  const val=prompt('Optional: Gemini-API-Key einfügen (kostenlos auf aistudio.google.com/apikey).\nLeer + OK = Key löschen. Der Key bleibt nur auf diesem Gerät.\n\nAktuell: '+(cur?cur.slice(0,8)+'...':'kein Key'), cur);
   if(val===null) return;
   const k=val.trim();
   if(!k){ localStorage.removeItem('lilly_gkey'); $fab3.classList.remove('on'); statusEl.textContent='KEY GELÖSCHT'; setTimeout(()=>statusEl.textContent='IDLE',2200); return; }
   localStorage.setItem('lilly_gkey',k);
   statusEl.textContent='TESTE KEY...';
   try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'Sag kurz Hallo auf Deutsch.'}]}]})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(k), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:'Sag kurz Hallo auf Deutsch.'}]}]})});
     if(r.ok){ statusEl.textContent='KEY OK!'; $fab3.classList.add('on'); }
     else { statusEl.textContent='KEY UNGÜLTIG'; setTimeout(()=>statusEl.textContent='IDLE',2600); }
   }catch(e){ statusEl.textContent='NETZ FEHLER'; setTimeout(()=>statusEl.textContent='IDLE',2600); }

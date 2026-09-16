@@ -65,6 +65,12 @@
   .knopf{min-width:56px; min-height:56px; border-radius:16px; border:1px solid var(--linie); background:#160f2a; color:var(--text); font-size:12px; font-weight:600; letter-spacing:.05em;}
   .knopf.on{border-color:var(--gruen); color:var(--gruen);}
   #modus.aus{color:var(--dim);}
+  #leiste{display:flex; gap:8px; padding:10px 16px 2px; overflow-x:auto;}
+  #leiste .knopf{min-width:0; padding:0 13px; min-height:44px; font-size:12px; flex:none;}
+  #leiste .knopf.an{border-color:var(--gruen); color:var(--gruen);}
+  #leiste{display:flex; gap:8px; padding:10px 16px 2px; overflow-x:auto;}
+  #leiste .knopf{min-width:0; padding:0 13px; min-height:44px; font-size:12px; flex:none;}
+  #leiste .knopf.an{border-color:var(--gruen); color:var(--gruen);}
   #tippzeile{display:flex; gap:10px; padding:10px 16px 0;}
   #tippfeld{flex:1; min-height:50px; border-radius:14px; border:1px solid var(--linie); background:#120d22; color:var(--text); padding:0 14px; font-size:16px; font-family:inherit;}
   #tippfeld::placeholder{color:#7d6ea6;}
@@ -78,6 +84,13 @@
   <h1>Lilly</h1>
   <div id="status">BEREIT</div>
 </header>
+
+<div id="leiste">
+  <button class="knopf" id="basis" title="Kommandobasis-Uebersicht">BASIS</button>
+  <button class="knopf" id="stimme" title="Antworten vorlesen">STIMME AUS</button>
+  <button class="knopf" id="hud" title="Dashboard der Kommandobasis">HUD</button>
+  <button class="knopf" id="zahnrad" title="Einstellungen">SETUP</button>
+</div>
 
 <div class="stufe">
   <div id="buehne">
@@ -107,8 +120,7 @@
 <div id="steuer">
   <button class="knopf" id="modus" title="Modus umschalten">FAST</button>
   <button id="ptt" disabled>HALTEN &amp; SPRECHEN</button>
-  <button class="knopf" id="hud" title="Dashboard der Kommandobasis">HUD</button>
-  <button class="knopf" id="zahnrad" title="Einstellungen">SETUP</button>
+
 </div>
 
 <script>
@@ -183,7 +195,7 @@
       if(m.type === 'ready'){ statusText('VERBUNDEN','ok'); }
       else if(m.type === 'state'){ setZustand(m.value); if(m.value === 'thinking') statusText('DENKT…'); else if(m.value === 'listening') statusText('HÖRT ZU'); }
       else if(m.type === 'level'){ S.serverPegel = Math.max(m.rms || 0, (m.peak || 0) * 0.5); S.serverPegelZeit = performance.now(); }
-      else if(m.type === 'answer'){ S.wartend = false; blase('lilly', m.reply); merken('assistant', m.reply); statusText('BEREIT','ok'); setTimeout(function(){ setZustand('idle'); }, 900); }
+      else if(m.type === 'answer'){ S.wartend = false; blase('lilly', m.reply); merken('assistant', m.reply); sprich(m.reply); statusText('BEREIT','ok'); setTimeout(function(){ setZustand('idle'); }, 900); }
       else if(m.type === 'transcript_final'){ if(m.text){ blase('ich', m.text); merken('user', m.text); } }
       else if(m.type === 'pong'){}
       else if(m.type === 'error'){ statusText('FEHLER: ' + (m.message||''), 'fehler'); blase('meta', 'Fehler: ' + (m.message||'')); }
@@ -236,7 +248,7 @@
         fetch(b.url + '/answer?id=' + j.job, { cache:'no-store' }).then(function(r2){ return r2.json(); }).then(function(a){
           if(a.status === 'done'){
             clearInterval(tick); clearTimeout(abbruch); S.wartend = false;
-            blase('lilly', a.reply); merken('assistant', a.reply);
+            blase('lilly', a.reply); merken('assistant', a.reply); sprich(a.reply);
             statusText('BEREIT','ok'); setZustand('idle');
           } else if(versuche > 90){
             clearInterval(tick); clearTimeout(abbruch); S.wartend = false;
@@ -427,6 +439,34 @@
     elModus.classList.toggle('aus', S.modus === 'fast');
     statusText('MODUS ' + S.modus.toUpperCase());
   });
+  var elStimme = $('stimme'), elBasis = $('basis');
+  var stimmeAn = (localStorage.getItem('lilly_stimme') || 'aus') === 'an';
+  function stimmeAnzeigen(){ if(elStimme){ elStimme.textContent = stimmeAn ? 'STIMME AN' : 'STIMME AUS'; elStimme.classList.toggle('an', stimmeAn); } }
+  function sprich(text){
+    if(!stimmeAn || !window.speechSynthesis || !text) return;
+    try{
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(String(text).slice(0, 400));
+      u.lang = 'de-DE'; u.rate = 1.02; u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  if(elStimme){
+    stimmeAnzeigen();
+    elStimme.addEventListener('click', function(){
+      stimmeAn = !stimmeAn;
+      localStorage.setItem('lilly_stimme', stimmeAn ? 'an' : 'aus');
+      stimmeAnzeigen();
+      if(stimmeAn){ sprich('Stimme ist an, miau.'); } else if(window.speechSynthesis){ window.speechSynthesis.cancel(); }
+    });
+  }
+  if(elBasis){
+    elBasis.addEventListener('click', function(){
+      var b = basis();
+      if(!b.fertig){ statusText('SETUP NÖTIG','fehler'); return; }
+      window.open(b.url + '/basis/' + encodeURIComponent(b.tok), '_blank');
+    });
+  }
   var elHud = $('hud');
   if(elHud){ elHud.addEventListener('click', function(){
     var b = basis();

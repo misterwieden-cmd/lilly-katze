@@ -333,7 +333,7 @@
         S.ws.send(JSON.stringify({ type:'start', format:'pcm16', rate:16000 }));
       }
       var r = S.erkennt || spracherkennungBauen();
-      if(r){ try{ r.start(); }catch(e){} } else { statusText('KEIN SPRACH-API - BITTE TIPPEN','fehler'); if(elTipp){ elTipp.focus(); } }
+      if(r){ try{ r.start(); }catch(e){} } else { statusText('KEIN SPRACH-API – BITTE TIPPEN','fehler'); if(elTipp){ elTipp.focus(); } }
     }).catch(function(e){
       elPtt.classList.remove('aktiv');
       statusText('MIKRO: ' + (e.message || 'Fehler'), 'fehler');
@@ -430,8 +430,8 @@
   var elHud = $('hud');
   if(elHud){ elHud.addEventListener('click', function(){
     var b = basis();
-    if(!b.fertig){ statusText('SETUP NOETIG','fehler'); return; }
-    window.open(b.url + '/dashboard', '_blank');
+    if(!b.fertig){ statusText('SETUP NÖTIG','fehler'); return; }
+    window.open(b.url + '/hud/' + encodeURIComponent(b.tok), '_blank');
   }); }
   elZahnrad.addEventListener('click', function(){
     var b = basis();

@@ -14,7 +14,7 @@ Legende: **belegt** = aus offizieller Doku/Preisseite (laut Suchergebnis), **Dri
 | Andockstellen | `setZustand(z)` (`index.html:144`) mit den Zuständen `idle / listening / thinking / speaking / error`; `pegelLesen()` liefert Audiopegel 0..1 (`index.html:368`); Render-Schleife `zeichnen()` (`index.html:386`). Genau diese drei Stellen reichen, um eine 3D-Figur anzusteuern. |
 | HUD / Basis | `/hud` und `/basis` liefert das PC-Backend (Tailscale). Code liegt **nicht** im Repo. Die PC-Ordner (`Lillys-Imperium` u. a. auf LAPI) sind für Cloud-Sessions nicht freigegeben → **ob dort schon three.js läuft, ist unbekannt.** |
 | Nutzung | PWA im Hochformat mit Push-to-Talk → läuft auch auf dem Handy. 3D muss abschaltbar sein und darf den Akku nicht leersaugen. |
-| Intel-Grafik | Genaues Modell **unbekannt**. Budgets unten sind Startwerte und müssen auf dem Gerät gemessen werden. |
+| Zielgerät | Samsung-Laptop „LAPI“ (Windows) mit Intel-Grafik. Genaues Modell und GPU **unbekannt** – auslesen per PowerShell: `Get-CimInstance Win32_ComputerSystem \| Select-Object Manufacturer, Model` und `Get-CimInstance Win32_VideoController \| Select-Object Name, DriverVersion`. Budgets unten sind Startwerte und müssen auf dem Gerät gemessen werden. |
 
 ## 2. Referenz Lilly – Wiedererkennungsmerkmale
 
